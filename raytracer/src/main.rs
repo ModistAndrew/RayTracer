@@ -1,7 +1,7 @@
 use console::style;
 use image::{ImageBuffer, RgbImage};
 use indicatif::ProgressBar;
-use std::{fs::File, process::exit};
+use std::fs::File;
 
 fn main() {
     let path = std::path::Path::new("output/book1/image1.jpg");
@@ -42,6 +42,4 @@ fn main() {
         Ok(_) => {}
         Err(_) => println!("{}", style("Outputting image fails.").red()),
     }
-
-    exit(0);
 }
