@@ -10,7 +10,7 @@ fn main() {
     let focal_length = 1.0;
     let origin = Vec3d::new(0.0, 0.0, 0.0);
     let sample_per_pixel = 100;
-    let max_depth = 10;
+    let max_depth = u32::MAX;
 
     let viewport_width = aspect_ratio * viewport_height;
     let resolution_height = (resolution_width as f64 / aspect_ratio) as u32;
