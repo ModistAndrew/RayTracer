@@ -1,5 +1,5 @@
-use std::ops;
 use rand::Rng;
+use std::ops;
 
 #[derive(Debug, Clone, Copy, Default)]
 pub struct Vec3d {

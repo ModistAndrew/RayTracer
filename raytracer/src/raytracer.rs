@@ -4,31 +4,43 @@ use crate::color::Color;
 use crate::hittable::{Hittable, HittableList};
 use crate::interval::Interval;
 use crate::ray::Ray;
-use indicatif::ProgressBar;
 use crate::vec3d::Vec3d;
+use indicatif::ProgressBar;
 
 pub struct RayTracer {
     camera: Camera,
     canvas: Canvas,
     hittable_list: HittableList,
+    max_depth: u32,
 }
 
 impl RayTracer {
-    pub fn new(camera: Camera, canvas: Canvas, hittable_list: HittableList) -> Self {
+    pub fn new(
+        camera: Camera,
+        canvas: Canvas,
+        hittable_list: HittableList,
+        max_depth: u32,
+    ) -> Self {
         Self {
             camera,
             canvas,
             hittable_list,
+            max_depth,
         }
     }
 
-    fn ray_color(&self, ray: &Ray) -> Color {
+    fn raytrace(&self, ray: &Ray, depth: u32) -> Color {
+        if depth >= self.max_depth {
+            return Color::new(0.0, 0.0, 0.0);
+        }
         if let Some(hit_record) = self
             .hittable_list
             .hit(ray, Interval::new(0.0, f64::INFINITY))
         {
             let direction = Vec3d::random_unit_on_hemisphere(hit_record.normal);
-            return self.ray_color(&Ray::new(hit_record.position, direction)).darken(0.5);
+            return self
+                .raytrace(&Ray::new(hit_record.position, direction), depth + 1)
+                .darken(0.5);
         }
         let unit_direction = ray.direction.normalize();
         let a = 0.5 * (unit_direction.y + 1.0);
@@ -50,7 +62,7 @@ impl RayTracer {
                         .camera
                         .get_rays_at(i, j)
                         .iter()
-                        .map(|ray| self.ray_color(ray))
+                        .map(|ray| self.raytrace(ray, 0))
                         .collect::<Vec<Color>>(),
                 );
                 self.canvas.write(i, j, color);
