@@ -40,8 +40,6 @@ impl RayTracer {
     pub fn render(&mut self, show_progress: bool) {
         let width = self.canvas.width();
         let height = self.canvas.height();
-        let pixel_width = 1.0 / width as f64;
-        let pixel_height = 1.0 / height as f64;
         let progress = if show_progress {
             ProgressBar::new((height * width) as u64)
         } else {
@@ -49,10 +47,14 @@ impl RayTracer {
         };
         for i in 0..width {
             for j in 0..height {
-                let u = (i as f64 + 0.5) * pixel_width;
-                let v = (j as f64 + 0.5) * pixel_height;
-                let ray = self.camera.get_ray(u, v);
-                let color = self.ray_color(&ray);
+                let color = Color::blend(
+                    &self
+                        .camera
+                        .get_rays_at(i, j)
+                        .iter()
+                        .map(|ray| self.ray_color(ray))
+                        .collect::<Vec<Color>>(),
+                );
                 self.canvas.write(i, j, color);
                 progress.inc(1);
             }

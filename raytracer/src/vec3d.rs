@@ -12,8 +12,8 @@ impl Vec3d {
         Self { x, y, z }
     }
 
-    pub fn dot(v1: Self, v2: Self) -> f64 {
-        v1.x * v2.x + v1.y * v2.y + v1.z * v2.z
+    pub fn dot(self, other: Vec3d) -> f64 {
+        self.x * other.x + self.y * other.y + self.z * other.z
     }
 
     pub fn length_squared(&self) -> f64 {
@@ -92,6 +92,6 @@ impl ops::Div<f64> for Vec3d {
 fn test_vec3d() {
     let v1 = Vec3d::new(1.0, 2.0, 3.0);
     let v2 = Vec3d::new(4.0, 5.0, 6.0);
-    assert_eq!(Vec3d::dot(v1, v2), 32.0);
+    assert_eq!(v1.dot(v2), 32.0);
     assert_eq!(v1.length_squared(), 14.0);
 }
