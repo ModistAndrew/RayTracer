@@ -1,4 +1,5 @@
 use std::ops;
+use rand::Rng;
 
 #[derive(Debug, Clone, Copy, Default)]
 pub struct Vec3d {
@@ -26,6 +27,37 @@ impl Vec3d {
 
     pub fn normalize(&self) -> Vec3d {
         *self / self.length()
+    }
+
+    pub fn random_in_cube() -> Vec3d {
+        let mut rng = rand::thread_rng();
+        Vec3d::new(
+            rng.gen_range(-1.0..1.0),
+            rng.gen_range(-1.0..1.0),
+            rng.gen_range(-1.0..1.0),
+        )
+    }
+
+    pub fn random_in_sphere() -> Vec3d {
+        loop {
+            let p = Vec3d::random_in_cube();
+            if p.length_squared() < 1.0 {
+                return p;
+            }
+        }
+    }
+
+    pub fn random_unit_vector() -> Vec3d {
+        Vec3d::random_in_sphere().normalize()
+    }
+
+    pub fn random_unit_on_hemisphere(normal: Vec3d) -> Vec3d {
+        let unit = Vec3d::random_unit_vector();
+        if unit.dot(normal) > 0.0 {
+            unit
+        } else {
+            -unit
+        }
     }
 }
 

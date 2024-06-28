@@ -13,7 +13,7 @@ impl Color {
         Self { r, g, b }
     }
 
-    pub fn blend(colors: &[Color]) -> Self {
+    pub fn mix(colors: &[Color]) -> Self {
         let mut r = 0.0;
         let mut g = 0.0;
         let mut b = 0.0;
@@ -24,6 +24,10 @@ impl Color {
         }
         let n = colors.len() as f64;
         Self::new(r / n, g / n, b / n)
+    }
+
+    pub fn darken(&self, factor: f64) -> Self {
+        Self::new(self.r * factor, self.g * factor, self.b * factor)
     }
 }
 

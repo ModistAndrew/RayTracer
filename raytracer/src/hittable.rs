@@ -55,9 +55,9 @@ impl Hittable for Sphere {
         }
         let sqrt_d = discriminant.sqrt();
         let mut root = (h - sqrt_d) / a;
-        if !interval.contains(root) {
+        if !interval.surrounds(root) {
             root = (h + sqrt_d) / a;
-            if !interval.contains(root) {
+            if !interval.surrounds(root) {
                 return None;
             }
         }
