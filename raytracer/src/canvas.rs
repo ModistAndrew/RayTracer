@@ -31,6 +31,9 @@ impl Canvas {
         let path = std::path::Path::new(path);
         let prefix = path.parent().unwrap();
         std::fs::create_dir_all(prefix).expect("Cannot create all the parents");
+        if path.exists() {
+            panic!("File already exists: {}", path.to_str().unwrap());
+        }
         println!(
             "Output image as \"{}\"",
             style(path.to_str().unwrap()).yellow()

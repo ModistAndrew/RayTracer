@@ -16,10 +16,11 @@ fn main() {
 
     let mut hittable_list = HittableList::default();
     hittable_list.add(Box::new(Sphere::new(Vec3d::new(0.0, 0.0, -1.0), 0.5)));
+    hittable_list.add(Box::new(Sphere::new(Vec3d::new(0.0, -100.5, -1.0), 100.0)));
 
     let camera = Camera::new(origin, focal_length, viewport_width, viewport_height);
     let picture = raytracer::canvas::Canvas::new(image_width, image_height);
     let mut raytracer = RayTracer::new(camera, picture, hittable_list);
     raytracer.render(true);
-    raytracer.save("output/book1/image4.jpg");
+    raytracer.save("output/book1/image5.jpg");
 }
