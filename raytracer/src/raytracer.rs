@@ -37,7 +37,7 @@ impl RayTracer {
             .hittable_list
             .hit(ray, Interval::new(0.001, f64::INFINITY))
         {
-            let direction = Vec3d::random_unit_on_hemisphere(hit_record.normal);
+            let direction = hit_record.normal + Vec3d::random_unit_vector();
             return self
                 .raytrace(&Ray::new(hit_record.position, direction), depth + 1)
                 .darken(0.5);
