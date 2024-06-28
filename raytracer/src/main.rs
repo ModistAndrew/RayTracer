@@ -21,5 +21,5 @@ fn main() {
     let picture = raytracer::canvas::Canvas::new(image_width, image_height);
     let mut raytracer = RayTracer::new(camera, picture, hittable_list);
     raytracer.render(true);
-    raytracer.save("output/book1/image3.jpg");
+    raytracer.save("output/book1/image4.jpg");
 }

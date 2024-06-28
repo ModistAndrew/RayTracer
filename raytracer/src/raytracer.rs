@@ -22,12 +22,15 @@ impl RayTracer {
     }
 
     fn ray_color(&self, ray: &Ray) -> Color {
-        if self
+        if let Some(hit_record) = self
             .hittable_list
             .hit(ray, Interval::new(0.0, f64::INFINITY))
-            .is_some()
         {
-            return Color::new(1.0, 0.0, 0.0);
+            return Color::new(
+                0.5 * (hit_record.normal.x + 1.0),
+                0.5 * (hit_record.normal.y + 1.0),
+                0.5 * (hit_record.normal.z + 1.0),
+            );
         }
         let unit_direction = ray.direction.normalize();
         let a = 0.5 * (unit_direction.y + 1.0);
