@@ -5,7 +5,7 @@ use crate::vec3d::Vec3d;
 pub struct HitRecord {
     pub t: f64,
     pub position: Vec3d,
-    pub normal: Vec3d, // always normalized and points opposite to the ray
+    pub normal: Vec3d,    // always normalized and points opposite to the ray
     pub front_face: bool, // whether outside the object
 }
 
@@ -19,7 +19,12 @@ impl HitRecord {
         } else {
             -outward_normal
         };
-        Self { t, position, normal, front_face }
+        Self {
+            t,
+            position,
+            normal,
+            front_face,
+        }
     }
 }
 
@@ -27,7 +32,7 @@ pub trait Hittable {
     fn hit(&self, ray: &Ray, interval: Interval) -> Option<HitRecord>;
 }
 
-struct Sphere {
+pub struct Sphere {
     center: Vec3d,
     radius: f64,
 }
@@ -50,12 +55,41 @@ impl Hittable for Sphere {
         }
         let sqrt_d = discriminant.sqrt();
         let mut root = (h - sqrt_d) / a;
-        if (!interval.contains(root)) {
+        if !interval.contains(root) {
             root = (h + sqrt_d) / a;
-            if (!interval.contains(root)) {
+            if !interval.contains(root) {
                 return None;
             }
         }
-        Some(HitRecord::new(ray, root, (ray.at(root) - self.center) / self.radius))
+        Some(HitRecord::new(
+            ray,
+            root,
+            (ray.at(root) - self.center) / self.radius,
+        ))
+    }
+}
+
+#[derive(Default)]
+pub struct HittableList {
+    objects: Vec<Box<dyn Hittable>>,
+}
+
+impl HittableList {
+    pub fn add(&mut self, object: Box<dyn Hittable>) {
+        self.objects.push(object);
+    }
+}
+
+impl Hittable for HittableList {
+    fn hit(&self, ray: &Ray, interval: Interval) -> Option<HitRecord> {
+        let mut record = None;
+        let mut closest = interval.max;
+        for object in &self.objects {
+            if let Some(hit_record) = object.hit(ray, Interval::new(interval.min, closest)) {
+                closest = hit_record.t;
+                record = Some(hit_record);
+            }
+        }
+        record
     }
 }

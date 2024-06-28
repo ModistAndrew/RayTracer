@@ -1,20 +1,34 @@
 use crate::camera::Camera;
 use crate::canvas::Canvas;
 use crate::color::Color;
+use crate::hittable::{Hittable, HittableList};
+use crate::interval::Interval;
 use crate::ray::Ray;
 use indicatif::ProgressBar;
 
 pub struct RayTracer {
     camera: Camera,
     canvas: Canvas,
+    hittable_list: HittableList,
 }
 
 impl RayTracer {
-    pub fn new(camera: Camera, canvas: Canvas) -> Self {
-        Self { camera, canvas }
+    pub fn new(camera: Camera, canvas: Canvas, hittable_list: HittableList) -> Self {
+        Self {
+            camera,
+            canvas,
+            hittable_list,
+        }
     }
 
     fn ray_color(&self, ray: &Ray) -> Color {
+        if self
+            .hittable_list
+            .hit(ray, Interval::new(0.0, f64::INFINITY))
+            .is_some()
+        {
+            return Color::new(1.0, 0.0, 0.0);
+        }
         let unit_direction = ray.direction.normalize();
         let a = 0.5 * (unit_direction.y + 1.0);
         Color::new(1.0 - 0.5 * a, 1.0 - 0.3 * a, 1.0)

@@ -92,6 +92,6 @@ impl ops::Div<f64> for Vec3d {
 fn test_vec3d() {
     let v1 = Vec3d::new(1.0, 2.0, 3.0);
     let v2 = Vec3d::new(4.0, 5.0, 6.0);
-    assert_eq!(Vec3d::dot(&v1, &v2), 32.0);
+    assert_eq!(Vec3d::dot(v1, v2), 32.0);
     assert_eq!(v1.length_squared(), 14.0);
 }
