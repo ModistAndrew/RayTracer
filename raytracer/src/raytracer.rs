@@ -29,7 +29,7 @@ impl RayTracer {
         }
     }
 
-    fn raytrace(&self, ray: &Ray, depth: u32) -> Color {
+    fn raytrace(&self, ray: &Ray, depth: u32, factor: f64) -> Color {
         if depth >= self.max_depth {
             return Color::new(0.0, 0.0, 0.0);
         }
@@ -39,8 +39,8 @@ impl RayTracer {
         {
             let direction = hit_record.normal + Vec3d::random_unit_vector();
             return self
-                .raytrace(&Ray::new(hit_record.position, direction), depth + 1)
-                .darken(0.5);
+                .raytrace(&Ray::new(hit_record.position, direction), depth + 1, factor)
+                .darken(factor);
         }
         let unit_direction = ray.direction.normalize();
         let a = 0.5 * (unit_direction.y + 1.0);
@@ -57,12 +57,13 @@ impl RayTracer {
         };
         for i in 0..width {
             for j in 0..height {
+                let factor = 0.1 + 0.2 * (i * 5 / width) as f64;
                 let color = Color::mix(
                     &self
                         .camera
                         .get_rays_at(i, j)
                         .iter()
-                        .map(|ray| self.raytrace(ray, 0))
+                        .map(|ray| self.raytrace(ray, 0, factor))
                         .collect::<Vec<Color>>(),
                 );
                 self.canvas.write(i, j, color);
