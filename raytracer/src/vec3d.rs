@@ -12,12 +12,12 @@ impl Vec3d {
         Self { x, y, z }
     }
 
-    pub fn dot(v1: &Self, v2: &Self) -> f64 {
+    pub fn dot(v1: Self, v2: Self) -> f64 {
         v1.x * v2.x + v1.y * v2.y + v1.z * v2.z
     }
 
     pub fn length_squared(&self) -> f64 {
-        Self::dot(self, self)
+        self.x * self.x + self.y * self.y + self.z * self.z
     }
 
     pub fn length(&self) -> f64 {
@@ -49,7 +49,7 @@ impl ops::Sub for Vec3d {
     type Output = Vec3d;
 
     fn sub(self, other: Vec3d) -> Vec3d {
-        self + (-other)
+        Vec3d::new(self.x - other.x, self.y - other.y, self.z - other.z)
     }
 }
 
@@ -64,7 +64,7 @@ impl ops::Mul<f64> for Vec3d {
 impl ops::Mul<Vec3d> for f64 {
     type Output = Vec3d;
     fn mul(self, v: Vec3d) -> Vec3d {
-        v * self
+        Vec3d::new(self * v.x, self * v.y, self * v.z)
     }
 }
 
@@ -84,7 +84,7 @@ impl ops::Div<f64> for Vec3d {
     type Output = Vec3d;
 
     fn div(self, t: f64) -> Vec3d {
-        self * (1.0 / t)
+        Vec3d::new(self.x / t, self.y / t, self.z / t)
     }
 }
 

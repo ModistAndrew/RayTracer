@@ -1,4 +1,4 @@
-REM test the github action
+REM perform fmt and test the github action. run .\action.bat in the root of the project
 @echo off
 cargo fmt && (
     echo cargo fmt succeeded

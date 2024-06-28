@@ -1,6 +1,5 @@
 use crate::vec3d::Vec3d;
 
-#[derive(Debug, Clone, Copy, Default)]
 pub struct Ray {
     pub origin: Vec3d,
     pub direction: Vec3d, // no need to normalize
