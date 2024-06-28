@@ -35,7 +35,7 @@ impl RayTracer {
         }
         if let Some(hit_record) = self
             .hittable_list
-            .hit(ray, Interval::new(0.0, f64::INFINITY))
+            .hit(ray, Interval::new(0.001, f64::INFINITY))
         {
             let direction = Vec3d::random_unit_on_hemisphere(hit_record.normal);
             return self

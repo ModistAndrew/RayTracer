@@ -10,7 +10,7 @@ fn main() {
     let focal_length = 1.0;
     let origin = Vec3d::new(0.0, 0.0, 0.0);
     let sample_per_pixel = 100;
-    let max_depth = u32::MAX;
+    let max_depth = 10;
 
     let viewport_width = aspect_ratio * viewport_height;
     let resolution_height = (resolution_width as f64 / aspect_ratio) as u32;
@@ -36,5 +36,5 @@ fn main() {
     let picture = raytracer::canvas::Canvas::new(resolution_width, image_height);
     let mut raytracer = RayTracer::new(camera, picture, hittable_list, max_depth);
     raytracer.render(true);
-    raytracer.save("output/book1/image8.png");
+    raytracer.save("output/book1/image9.png");
 }
