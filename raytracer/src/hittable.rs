@@ -49,6 +49,7 @@ impl HitRecord {
             self.get_hit().position,
             direction,
             blender.blend(self.ray.color, crate::color::BlendMode::Mul),
+            self.ray.time,
         ));
     }
 

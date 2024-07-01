@@ -39,7 +39,7 @@ impl Color {
         Self { r, g, b }
     }
 
-    pub fn blend(&self, other: Color, mode: BlendMode) -> Color {
+    pub fn blend(self, other: Color, mode: BlendMode) -> Color {
         let r = mode.apply(self.r, other.r);
         let g = mode.apply(self.g, other.g);
         let b = mode.apply(self.b, other.b);

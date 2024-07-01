@@ -5,14 +5,16 @@ pub struct Ray {
     pub origin: Vec3d,
     pub direction: Vec3d, // no need to normalize
     pub color: Color,
+    pub time: f64,
 }
 
 impl Ray {
-    pub fn new(origin: Vec3d, direction: Vec3d, color: Color) -> Self {
+    pub fn new(origin: Vec3d, direction: Vec3d, color: Color, time: f64) -> Self {
         Self {
             origin,
             direction,
             color,
+            time,
         }
     }
 

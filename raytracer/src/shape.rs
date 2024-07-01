@@ -10,18 +10,23 @@ pub trait Shape {
 pub struct Sphere {
     center: Vec3d,
     radius: f64,
+    direction: Vec3d,
 }
 
 impl Sphere {
-    pub fn new(center: Vec3d, radius: f64) -> Self {
-        Self { center, radius }
+    pub fn new(center: Vec3d, radius: f64, direction: Vec3d) -> Self {
+        Self {
+            center,
+            radius,
+            direction,
+        }
     }
 }
 
 impl Shape for Sphere {
     fn hit(&self, hit_record: &mut HitRecord, interval: Interval) -> bool {
         let ray = &hit_record.ray;
-        let oc = self.center - ray.origin;
+        let oc = self.center + self.direction * ray.time - ray.origin;
         let a = ray.direction.length_squared();
         let h = ray.direction.dot(oc);
         let c = oc.length_squared() - self.radius * self.radius;

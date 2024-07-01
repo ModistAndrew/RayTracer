@@ -1,5 +1,5 @@
 use crate::color::Color;
-use rand::Rng;
+use rand::{random, Rng};
 
 use crate::ray::Ray;
 use crate::vec3d::Vec3d;
@@ -82,7 +82,7 @@ impl Camera {
         let origin = self.defocus_disk_sample();
         let direction =
             self.viewport_upper_left + self.viewport_u * u + self.viewport_v * v - origin;
-        Ray::new(origin, direction, self.color)
+        Ray::new(origin, direction, self.color, random())
     }
 
     fn defocus_disk_sample(&self) -> Vec3d {
