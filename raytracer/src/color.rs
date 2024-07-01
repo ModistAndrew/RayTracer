@@ -9,9 +9,40 @@ pub struct Color {
     pub b: f64,
 }
 
+pub enum BlendMode {
+    Add,
+    Mul,
+}
+
+impl BlendMode {
+    pub fn apply(&self, a: f64, b: f64) -> f64 {
+        match self {
+            Self::Add => a + b,
+            Self::Mul => a * b,
+        }
+    }
+}
+
 impl Color {
+    pub const BLACK: Self = Self {
+        r: 0.0,
+        g: 0.0,
+        b: 0.0,
+    };
+    pub const WHITE: Self = Self {
+        r: 1.0,
+        g: 1.0,
+        b: 1.0,
+    };
     pub fn new(r: f64, g: f64, b: f64) -> Self {
         Self { r, g, b }
+    }
+
+    pub fn blend(self, other: Color, mode: BlendMode) -> Color {
+        let r = mode.apply(self.r, other.r);
+        let g = mode.apply(self.g, other.g);
+        let b = mode.apply(self.b, other.b);
+        Self::new(r, g, b)
     }
 
     pub fn mix(colors: &[Color]) -> Self {
@@ -25,10 +56,6 @@ impl Color {
         }
         let n = colors.len() as f64;
         Self::new(r / n, g / n, b / n)
-    }
-
-    pub fn darken(&self, factor: f64) -> Self {
-        Self::new(self.r * factor, self.g * factor, self.b * factor)
     }
 
     fn linear_to_gamma(linear_component: f64) -> f64 {

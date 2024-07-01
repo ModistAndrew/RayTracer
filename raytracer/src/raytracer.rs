@@ -1,11 +1,11 @@
+use indicatif::ProgressBar;
+
 use crate::camera::Camera;
 use crate::canvas::Canvas;
 use crate::color::Color;
-use crate::hittable::{Hittable, HittableList};
+use crate::hittable::{HitRecord, Hittable, HittableList};
 use crate::interval::Interval;
 use crate::ray::Ray;
-use crate::vec3d::Vec3d;
-use indicatif::ProgressBar;
 
 pub struct RayTracer {
     camera: Camera,
@@ -29,22 +29,18 @@ impl RayTracer {
         }
     }
 
-    fn raytrace(&self, ray: &Ray, depth: u32, factor: f64) -> Color {
+    fn raytrace(&self, ray: Ray, depth: u32, factor: f64) -> Color {
         if depth >= self.max_depth {
             return Color::new(0.0, 0.0, 0.0);
         }
-        if let Some(hit_record) = self
-            .hittable_list
-            .hit(ray, Interval::new(0.001, f64::INFINITY))
-        {
-            let direction = hit_record.normal + Vec3d::random_unit_vector();
-            return self
-                .raytrace(&Ray::new(hit_record.position, direction), depth + 1, factor)
-                .darken(factor);
+        let mut hit_record = HitRecord::new(ray);
+        if self.hittable_list.hit(&mut hit_record, Interval::new(0.001, f64::INFINITY)) {
+            self.raytrace(hit_record.scatter.unwrap(), depth + 1, factor)
+        } else {
+            let unit_direction = hit_record.ray.direction.normalize();
+            let a = 0.5 * (unit_direction.y + 1.0);
+            Color::new(1.0 - 0.5 * a, 1.0 - 0.3 * a, 1.0)
         }
-        let unit_direction = ray.direction.normalize();
-        let a = 0.5 * (unit_direction.y + 1.0);
-        Color::new(1.0 - 0.5 * a, 1.0 - 0.3 * a, 1.0)
     }
 
     pub fn render(&mut self, show_progress: bool) {
@@ -62,7 +58,7 @@ impl RayTracer {
                     &self
                         .camera
                         .get_rays_at(i, j)
-                        .iter()
+                        .into_iter()
                         .map(|ray| self.raytrace(ray, 0, factor))
                         .collect::<Vec<Color>>(),
                 );

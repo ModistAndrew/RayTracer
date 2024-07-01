@@ -6,3 +6,5 @@ pub mod interval;
 pub mod ray;
 pub mod raytracer;
 pub mod vec3d;
+pub mod material;
+pub mod shape;

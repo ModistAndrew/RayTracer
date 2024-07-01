@@ -1,4 +1,5 @@
 use rand::Rng;
+use crate::color::Color;
 
 use crate::ray::Ray;
 use crate::vec3d::Vec3d;
@@ -11,6 +12,7 @@ pub struct Camera {
     pixel_width_ratio: f64,
     pixel_height_ratio: f64,
     sample_per_pixel: u32,
+    color: Color,
 }
 
 impl Camera {
@@ -22,6 +24,7 @@ impl Camera {
         resolution_width: u32,
         resolution_height: u32,
         sample_per_pixel: u32,
+        color: Color,
     ) -> Self {
         let viewport_u = Vec3d::new(viewport_width, 0.0, 0.0);
         let viewport_v = Vec3d::new(0.0, -viewport_height, 0.0);
@@ -35,6 +38,7 @@ impl Camera {
             pixel_width_ratio: 1.0 / resolution_width as f64,
             pixel_height_ratio: 1.0 / resolution_height as f64,
             sample_per_pixel,
+            color,
         }
     }
 
@@ -42,6 +46,7 @@ impl Camera {
         Ray::new(
             self.origin,
             self.viewport_upper_left + self.viewport_u * u + self.viewport_v * v - self.origin,
+            self.color
         )
     }
 

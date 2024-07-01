@@ -1,3 +1,5 @@
+use std::fs;
+use std::path::PathBuf;
 use console::style;
 use image::{ImageBuffer, RgbImage};
 
@@ -27,19 +29,33 @@ impl Canvas {
         self.image.height()
     }
 
+    fn rename_if_exists(mut path: PathBuf) -> PathBuf {
+        let mut counter = 1;
+        while path.exists() {
+            println!(
+                "File \"{}\" already exists. Renaming...",
+                style(path.to_str().unwrap()).yellow()
+            );
+            let extension = path.extension().and_then(|os_str| os_str.to_str()).unwrap_or("");
+            let filename = path.file_stem().and_then(|os_str| os_str.to_str()).unwrap_or("");
+            path = path.with_file_name(format!("{}_{}.{}", filename, counter, extension));
+            counter += 1;
+        }
+        path
+    }
+
     pub fn save(&self, path: &str) {
         let path = std::path::Path::new(path);
         let prefix = path.parent().unwrap();
-        std::fs::create_dir_all(prefix).expect("Cannot create all the parents");
-        if path.exists() {
-            panic!("File already exists: {}", path.to_str().unwrap());
-        }
+        fs::create_dir_all(prefix).expect("Cannot create all the parents");
+        let path_buf = Self::rename_if_exists(path.to_path_buf());
+        let path = path_buf.as_path();
         println!(
             "Output image as \"{}\"",
-            style(path.to_str().unwrap()).yellow()
+            style(path.to_str().unwrap()).green()
         );
         self.image
             .save(path)
-            .unwrap_or_else(|e| eprintln!("Outputting image failed: {}", e));
+            .expect("Cannot save the image to the file");
     }
 }
