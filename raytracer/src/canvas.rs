@@ -30,7 +30,6 @@ impl Canvas {
     }
 
     fn rename_if_exists(mut path: PathBuf) -> PathBuf {
-        let mut counter = 1;
         while path.exists() {
             println!(
                 "File \"{}\" already exists. Renaming...",
@@ -38,8 +37,7 @@ impl Canvas {
             );
             let extension = path.extension().and_then(|os_str| os_str.to_str()).unwrap_or("");
             let filename = path.file_stem().and_then(|os_str| os_str.to_str()).unwrap_or("");
-            path = path.with_file_name(format!("{}_{}.{}", filename, counter, extension));
-            counter += 1;
+            path = path.with_file_name(format!("{}_{}.{}", filename, 1, extension));
         }
         path
     }

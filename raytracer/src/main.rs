@@ -24,8 +24,8 @@ fn main() {
     };
 
     let mut hittable_list = HittableList::default();
-    hittable_list.add(Box::new(Object::new(Box::new(Sphere::new(Vec3d::new(0.0, 0.0, -1.0), 0.5)), Box::new(Lambertian::new(Color::new(0.1, 0.2, 0.5))))));
-    hittable_list.add(Box::new(Object::new(Box::new(Sphere::new(Vec3d::new(0.0, -100.5, -1.0), 100.0)), Box::new(Lambertian::new(Color::new(0.1, 0.2, 0.5))))));
+    hittable_list.add(Box::new(Object::new(Box::new(Sphere::new(Vec3d::new(0.0, 0.0, -1.0), 0.5)), Box::new(Lambertian::new(Color::new(0.5, 0.5, 0.5))))));
+    hittable_list.add(Box::new(Object::new(Box::new(Sphere::new(Vec3d::new(0.0, -100.5, -1.0), 100.0)), Box::new(Lambertian::new(Color::new(0.5, 0.5, 0.5))))));
 
     let camera = Camera::new(
         origin,

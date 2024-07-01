@@ -14,7 +14,7 @@ impl Vec3d {
     }
 
     pub fn dot(self, other: Vec3d) -> f64 {
-        self.x * other.x + self.y * other.y + self.z + other.z
+        self.x * other.x + self.y * other.y + self.z * other.z
     }
 
     pub fn length_squared(&self) -> f64 {
