@@ -13,6 +13,11 @@ impl Vec3d {
         Self { x, y, z }
     }
 
+    pub fn near_zero(&self) -> bool {
+        const S: f64 = 1e-8;
+        self.x.abs() < S && self.y.abs() < S && self.z.abs() < S
+    }
+
     pub fn dot(self, other: Vec3d) -> f64 {
         self.x * other.x + self.y * other.y + self.z * other.z
     }
@@ -58,6 +63,11 @@ impl Vec3d {
         } else {
             -unit
         }
+    }
+
+    // normal must be normalized
+    pub fn reflect(self, normal: Vec3d) -> Vec3d {
+        self - normal * 2.0 * self.dot(normal)
     }
 }
 

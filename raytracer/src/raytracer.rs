@@ -30,16 +30,22 @@ impl RayTracer {
     }
 
     fn raytrace(&self, ray: Ray, depth: u32) -> Color {
-        if depth >= self.max_depth {
+        if depth >= self.max_depth || ray.color.is_black() {
             return Color::new(0.0, 0.0, 0.0);
         }
         let mut hit_record = HitRecord::new(ray);
-        if self.hittable_list.hit(&mut hit_record, Interval::new(0.001, f64::INFINITY)) {
+        const MIN_DISTANCE: f64 = 0.001;
+        if self
+            .hittable_list
+            .hit(&mut hit_record, Interval::new(MIN_DISTANCE, f64::INFINITY))
+        {
             self.raytrace(hit_record.scatter.unwrap(), depth + 1)
         } else {
-            let unit_direction = hit_record.ray.direction.normalize();
+            let ray = hit_record.ray;
+            let unit_direction = ray.direction.normalize();
             let a = 0.5 * (unit_direction.y + 1.0);
-            Color::new(1.0 - 0.5 * a, 1.0 - 0.3 * a, 1.0).blend(hit_record.ray.color, BlendMode::Mul)
+            let sky_color = Color::new(1.0 - 0.5 * a, 1.0 - 0.3 * a, 1.0);
+            sky_color.blend(ray.color, BlendMode::Mul)
         }
     }
 

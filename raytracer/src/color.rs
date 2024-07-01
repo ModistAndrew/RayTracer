@@ -77,6 +77,11 @@ impl Color {
     fn b_gamma(&self) -> f64 {
         Self::linear_to_gamma(self.b)
     }
+
+    pub fn is_black(&self) -> bool {
+        const S: f64 = 1e-8;
+        self.r < S && self.g < S && self.b < S
+    }
 }
 
 impl From<Color> for Rgb<u8> {

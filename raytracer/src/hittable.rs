@@ -1,13 +1,13 @@
+use crate::color::Color;
 use crate::interval::Interval;
 use crate::material::Material;
 use crate::ray::Ray;
 use crate::shape::Shape;
 use crate::vec3d::Vec3d;
 
-
 pub struct Hit {
     pub t: f64,
-    pub position: Vec3d, // the hit position
+    pub position: Vec3d,  // the hit position
     pub normal: Vec3d,    // always normalized and points opposite to the ray
     pub front_face: bool, // whether outside the object
 }
@@ -44,8 +44,12 @@ impl HitRecord {
         });
     }
 
-    pub fn set_scatter(&mut self, scatter: Ray) {
-        self.scatter = Some(scatter);
+    pub fn set_scatter(&mut self, direction: Vec3d, blender: Color) {
+        self.scatter = Some(Ray::new(
+            self.get_hit().position,
+            direction,
+            blender.blend(self.ray.color, crate::color::BlendMode::Mul),
+        ));
     }
 
     pub fn does_hit(&self) -> bool {
@@ -62,6 +66,8 @@ impl HitRecord {
 }
 
 pub trait Hittable {
+    // hit_record.ray is the original ray. may contain the former hit record. if hit, update hit_record.scatter and return true
+    // hit_record.hit is for internal use and should not be accessed
     fn hit(&self, hit_record: &mut HitRecord, interval: Interval) -> bool;
 }
 

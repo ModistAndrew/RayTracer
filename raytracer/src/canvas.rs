@@ -1,7 +1,7 @@
-use std::fs;
-use std::path::PathBuf;
 use console::style;
 use image::{ImageBuffer, RgbImage};
+use std::fs;
+use std::path::PathBuf;
 
 use crate::color::Color;
 
@@ -35,8 +35,14 @@ impl Canvas {
                 "File \"{}\" already exists. Renaming...",
                 style(path.to_str().unwrap()).yellow()
             );
-            let extension = path.extension().and_then(|os_str| os_str.to_str()).unwrap_or("");
-            let filename = path.file_stem().and_then(|os_str| os_str.to_str()).unwrap_or("");
+            let extension = path
+                .extension()
+                .and_then(|os_str| os_str.to_str())
+                .unwrap_or("");
+            let filename = path
+                .file_stem()
+                .and_then(|os_str| os_str.to_str())
+                .unwrap_or("");
             path = path.with_file_name(format!("{}_{}.{}", filename, 1, extension));
         }
         path
