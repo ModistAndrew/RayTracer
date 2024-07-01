@@ -48,8 +48,8 @@ impl Camera {
         let viewport_width =
             viewport_height * canvas_param.image_width as f64 / canvas_param.image_height as f64;
 
-        let pixel_width_ratio = viewport_width / canvas_param.image_width as f64;
-        let pixel_height_ratio = viewport_height / canvas_param.image_height as f64;
+        let pixel_width_ratio = 1.0 / canvas_param.image_width as f64;
+        let pixel_height_ratio = 1.0 / canvas_param.image_height as f64;
         let viewport_u = viewport_width * u;
         let viewport_v = viewport_height * -v;
         let viewport_upper_left =
