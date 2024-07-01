@@ -34,11 +34,11 @@ fn main() {
     )));
     hittable_list.add(Box::new(Object::new(
         Box::new(Sphere::new(Vec3d::new(-1.0, 0.0, -1.0), 0.5)),
-        Box::new(Metal::new(Color::new(0.8, 0.8, 0.8), 0.0)),
+        Box::new(Metal::new(Color::new(0.8, 0.8, 0.8), 0.3)),
     )));
     hittable_list.add(Box::new(Object::new(
         Box::new(Sphere::new(Vec3d::new(1.0, 0.0, -1.0), 0.5)),
-        Box::new(Metal::new(Color::new(0.8, 0.6, 0.2), 0.0)),
+        Box::new(Metal::new(Color::new(0.8, 0.6, 0.2), 1.0)),
     )));
 
     let camera = Camera::new(
@@ -53,5 +53,5 @@ fn main() {
     let picture = raytracer::canvas::Canvas::new(resolution_width, image_height);
     let mut raytracer = RayTracer::new(camera, picture, hittable_list, max_depth);
     raytracer.render(true);
-    raytracer.save("output/book1/image13.png");
+    raytracer.save("output/book1/image14.png");
 }
