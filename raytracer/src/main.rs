@@ -17,8 +17,8 @@ fn main() {
     let sample_per_pixel = 100;
     let max_depth = 10;
 
-    let mut resolution_height = (resolution_width as f64 / aspect_ratio) as u32;
-    resolution_height = if resolution_height < 1 {
+    let resolution_height = (resolution_width as f64 / aspect_ratio) as u32;
+    let resolution_height = if resolution_height < 1 {
         1
     } else {
         resolution_height

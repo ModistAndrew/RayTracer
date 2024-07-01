@@ -43,11 +43,11 @@ impl Metal {
 
 impl Material for Metal {
     fn scatter(&self, hit_record: &mut HitRecord) {
-        let mut reflected = hit_record
+        let reflected = hit_record
             .ray
             .direction
             .reflect(hit_record.get_hit().normal);
-        reflected = reflected.normalize() + Vec3d::random_unit_vector() * self.fuzz;
+        let reflected = reflected.normalize() + Vec3d::random_unit_vector() * self.fuzz;
         hit_record.set_scatter(
             reflected,
             if reflected.dot(hit_record.get_hit().normal) > 0.0 {
