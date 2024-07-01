@@ -69,14 +69,6 @@ impl Vec3d {
     pub fn reflect(self, normal: Vec3d) -> Vec3d {
         self - normal * 2.0 * self.dot(normal)
     }
-
-    // self and normal must be normalized
-    pub fn refract(self, normal: Vec3d, refraction_ratio: f64) -> Vec3d {
-        let cos_theta = (-self).dot(normal).min(1.0);
-        let r_out_perp = (self + normal * cos_theta) * refraction_ratio;
-        let r_out_parallel = -normal * (1.0 - r_out_perp.length_squared()).abs().sqrt();
-        r_out_perp + r_out_parallel
-    }
 }
 
 impl ops::Neg for Vec3d {

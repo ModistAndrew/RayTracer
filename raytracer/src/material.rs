@@ -76,13 +76,17 @@ impl Material for Dielectric {
         } else {
             self.refraction_index
         };
-        hit_record.set_scatter(
-            hit_record
-                .ray
-                .direction
-                .normalize()
-                .refract(hit_record.get_hit().normal, refraction_ratio),
-            Color::new(1.0, 1.0, 1.0),
-        );
+        let unit_direction = hit_record.ray.direction.normalize();
+        let normal = hit_record.get_hit().normal;
+        let cos_theta = (-unit_direction).dot(normal);
+        let sin_theta = (1.0 - cos_theta * cos_theta).sqrt();
+        let direction = if refraction_ratio * sin_theta > 1.0 {
+            unit_direction.reflect(normal)
+        } else {
+            let r_out_perp = (unit_direction + normal * cos_theta) * refraction_ratio;
+            let r_out_parallel = -normal * (1.0 - r_out_perp.length_squared()).sqrt();
+            r_out_perp + r_out_parallel
+        };
+        hit_record.set_scatter(direction, Color::new(1.0, 1.0, 1.0));
     }
 }
