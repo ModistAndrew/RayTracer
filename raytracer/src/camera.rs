@@ -19,12 +19,13 @@ impl Camera {
     pub fn new(
         origin: Vec3d,
         focal_length: f64,
-        viewport_width: f64,
-        viewport_height: f64,
+        fov: f64,
         resolution_width: u32,
         resolution_height: u32,
         sample_per_pixel: u32,
     ) -> Self {
+        let viewport_height = 2.0 * (fov.to_radians() / 2.0).tan() * focal_length;
+        let viewport_width = viewport_height * resolution_width as f64 / resolution_height as f64;
         let viewport_u = Vec3d::new(viewport_width, 0.0, 0.0);
         let viewport_v = Vec3d::new(0.0, -viewport_height, 0.0);
         let viewport_upper_left =
