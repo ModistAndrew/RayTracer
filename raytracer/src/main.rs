@@ -1,7 +1,7 @@
 use raytracer::camera::Camera;
 use raytracer::color::Color;
 use raytracer::hittable::{HittableList, Object};
-use raytracer::material::{Lambertian, Metal};
+use raytracer::material::{Dielectric, Lambertian, Metal};
 use raytracer::raytracer::RayTracer;
 use raytracer::shape::Sphere;
 use raytracer::vec3d::Vec3d;
@@ -34,7 +34,7 @@ fn main() {
     )));
     hittable_list.add(Box::new(Object::new(
         Box::new(Sphere::new(Vec3d::new(-1.0, 0.0, -1.0), 0.5)),
-        Box::new(Metal::new(Color::new(0.8, 0.8, 0.8), 0.3)),
+        Box::new(Dielectric::new(1.5)),
     )));
     hittable_list.add(Box::new(Object::new(
         Box::new(Sphere::new(Vec3d::new(1.0, 0.0, -1.0), 0.5)),
@@ -53,5 +53,5 @@ fn main() {
     let picture = raytracer::canvas::Canvas::new(resolution_width, image_height);
     let mut raytracer = RayTracer::new(camera, picture, hittable_list, max_depth);
     raytracer.render(true);
-    raytracer.save("output/book1/image14.png");
+    raytracer.save("output/book1/image16.png");
 }

@@ -58,3 +58,31 @@ impl Material for Metal {
         );
     }
 }
+
+pub struct Dielectric {
+    refraction_index: f64,
+}
+
+impl Dielectric {
+    pub fn new(refraction_index: f64) -> Self {
+        Self { refraction_index }
+    }
+}
+
+impl Material for Dielectric {
+    fn scatter(&self, hit_record: &mut HitRecord) {
+        let refraction_ratio = if hit_record.get_hit().front_face {
+            1.0 / self.refraction_index
+        } else {
+            self.refraction_index
+        };
+        hit_record.set_scatter(
+            hit_record
+                .ray
+                .direction
+                .normalize()
+                .refract(hit_record.get_hit().normal, refraction_ratio),
+            Color::new(1.0, 1.0, 1.0),
+        );
+    }
+}
