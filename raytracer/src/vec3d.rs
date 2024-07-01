@@ -65,6 +65,16 @@ impl Vec3d {
         }
     }
 
+    pub fn random_in_unit_disk() -> Vec3d {
+        let mut rng = rand::thread_rng();
+        loop {
+            let p = Vec3d::new(rng.gen_range(-1.0..1.0), rng.gen_range(-1.0..1.0), 0.0);
+            if p.length_squared() < 1.0 {
+                return p;
+            }
+        }
+    }
+
     // normal must be normalized
     pub fn reflect(self, normal: Vec3d) -> Vec3d {
         self - normal * 2.0 * self.dot(normal)

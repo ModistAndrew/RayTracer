@@ -13,6 +13,8 @@ fn main() {
 
     let fov = 20.0;
     let filter = Color::WHITE;
+    let defocus_angle = 10.0;
+    let focus_dist = 3.4;
 
     let aspect_ratio = 16.0 / 9.0;
     let image_width = 400;
@@ -51,7 +53,12 @@ fn main() {
             look_at,
             view_up,
         },
-        LensParam { fov, filter },
+        LensParam {
+            fov,
+            filter,
+            defocus_angle,
+            focus_dist,
+        },
         ImageParam {
             image_width,
             image_height,
@@ -61,5 +68,5 @@ fn main() {
     let picture = raytracer::canvas::Canvas::new(image_width, image_height);
     let mut raytracer = RayTracer::new(camera, picture, hittable_list, max_depth);
     raytracer.render(true);
-    raytracer.save("output/book1/image21.png");
+    raytracer.save("output/book1/image22.png");
 }
