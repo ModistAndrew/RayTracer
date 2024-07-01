@@ -11,7 +11,7 @@ fn main() {
     let look_at = Vec3d::new(0.0, 0.0, -1.0);
     let view_up = Vec3d::new(0.0, 1.0, 0.0);
 
-    let fov = 90.0;
+    let fov = 20.0;
     let filter = Color::WHITE;
 
     let aspect_ratio = 16.0 / 9.0;
@@ -61,5 +61,5 @@ fn main() {
     let picture = raytracer::canvas::Canvas::new(image_width, image_height);
     let mut raytracer = RayTracer::new(camera, picture, hittable_list, max_depth);
     raytracer.render(true);
-    raytracer.save("output/book1/image20.png");
+    raytracer.save("output/book1/image21.png");
 }
