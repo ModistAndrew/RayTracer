@@ -1,4 +1,5 @@
 use image::Rgb;
+use rand::Rng;
 
 use crate::interval::Interval;
 
@@ -38,7 +39,7 @@ impl Color {
         Self { r, g, b }
     }
 
-    pub fn blend(self, other: Color, mode: BlendMode) -> Color {
+    pub fn blend(&self, other: Color, mode: BlendMode) -> Color {
         let r = mode.apply(self.r, other.r);
         let g = mode.apply(self.g, other.g);
         let b = mode.apply(self.b, other.b);
@@ -81,6 +82,15 @@ impl Color {
     pub fn is_black(&self) -> bool {
         const S: f64 = 1e-8;
         self.r < S && self.g < S && self.b < S
+    }
+
+    pub fn random(min: f64, max: f64) -> Color {
+        let mut rng = rand::thread_rng();
+        Self::new(
+            rng.gen_range(min..max),
+            rng.gen_range(min..max),
+            rng.gen_range(min..max),
+        )
     }
 }
 
