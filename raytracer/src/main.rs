@@ -1,5 +1,5 @@
 use rand::Rng;
-use raytracer::bvh::BVHNode;
+
 use raytracer::camera::{Camera, ImageParam, LensParam, PerspectiveParam};
 use raytracer::color::{BlendMode, Color};
 use raytracer::hittable::{Hittable, HittableList, Object};
@@ -42,8 +42,8 @@ fn create_lambertian_moving(
 }
 
 fn main() {
-    let mut hittable_list = Vec::<Box<dyn Hittable>>::default();
-    hittable_list.push(create_lambertian(
+    let mut hittable_vec = Vec::<Box<dyn Hittable>>::default();
+    hittable_vec.push(create_lambertian(
         Vec3::new(0.0, -1000.0, 0.0),
         1000.0,
         Color::new(0.5, 0.5, 0.5),
@@ -59,41 +59,38 @@ fn main() {
             );
             if (center - Vec3::new(4.0, 0.2, 0.0)).length() > 0.9 {
                 if choose_mat < 0.8 {
-                    hittable_list.push(create_lambertian_moving(
+                    hittable_vec.push(create_lambertian_moving(
                         center,
                         0.2,
                         Color::random(0.0, 1.0).blend(Color::random(0.0, 1.0), BlendMode::Mul),
                         Vec3::new(0.0, rng.gen_range(0.0..0.5), 0.0),
                     ));
                 } else if choose_mat < 0.95 {
-                    hittable_list.push(create_metal(
+                    hittable_vec.push(create_metal(
                         center,
                         0.2,
                         Color::random(0.5, 1.0),
                         rng.gen_range(0.0..0.5),
                     ));
                 } else {
-                    hittable_list.push(create_dielectric(center, 0.2, 1.5));
+                    hittable_vec.push(create_dielectric(center, 0.2, 1.5));
                 }
             }
         }
     }
-    hittable_list.push(create_dielectric(Vec3::new(0.0, 1.0, 0.0), 1.0, 1.5));
-    hittable_list.push(create_lambertian(
+    hittable_vec.push(create_dielectric(Vec3::new(0.0, 1.0, 0.0), 1.0, 1.5));
+    hittable_vec.push(create_lambertian(
         Vec3::new(-4.0, 1.0, 0.0),
         1.0,
         Color::new(0.4, 0.2, 0.1),
     ));
-    hittable_list.push(create_metal(
+    hittable_vec.push(create_metal(
         Vec3::new(4.0, 1.0, 0.0),
         1.0,
         Color::new(0.7, 0.6, 0.5),
         0.0,
     ));
-    let hittable_list_bvh = BVHNode::new(hittable_list);
-
-    let mut world = HittableList::default();
-    world.add(Box::new(hittable_list_bvh));
+    let hittable_list = HittableList::new(hittable_vec);
 
     let aspect_ratio = 16.0 / 9.0;
     let image_width = 1200;
@@ -121,7 +118,7 @@ fn main() {
         },
     );
     let picture = raytracer::canvas::Canvas::new(image_width, image_height);
-    let mut raytracer = RayTracer::new(camera, picture, world, 50);
+    let mut raytracer = RayTracer::new(camera, picture, Box::new(hittable_list), 50);
     raytracer.render(true);
     raytracer.save("output/book1/image24.png");
 }

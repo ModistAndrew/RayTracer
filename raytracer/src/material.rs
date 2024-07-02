@@ -2,7 +2,7 @@ use crate::color::Color;
 use crate::hittable::HitRecord;
 use crate::vec3::Vec3;
 
-pub trait Material {
+pub trait Material: Sync {
     // hit_record.ray and hit_record.hit are the original ray and hit record. may contain the former scattered ray. update hit_record.scatter
     fn scatter(&self, hit_record: &mut HitRecord);
 }

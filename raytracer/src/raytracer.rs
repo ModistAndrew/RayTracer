@@ -1,29 +1,25 @@
 use indicatif::ProgressBar;
+use rayon::prelude::*;
 
 use crate::camera::Camera;
 use crate::canvas::Canvas;
 use crate::color::{BlendMode, Color};
-use crate::hittable::{HitRecord, Hittable, HittableList};
+use crate::hittable::{HitRecord, Hittable};
 use crate::ray::Ray;
 
 pub struct RayTracer {
     camera: Camera,
     canvas: Canvas,
-    hittable_list: HittableList,
+    world: Box<dyn Hittable>,
     max_depth: u32,
 }
 
 impl RayTracer {
-    pub fn new(
-        camera: Camera,
-        canvas: Canvas,
-        hittable_list: HittableList,
-        max_depth: u32,
-    ) -> Self {
+    pub fn new(camera: Camera, canvas: Canvas, world: Box<dyn Hittable>, max_depth: u32) -> Self {
         Self {
             camera,
             canvas,
-            hittable_list,
+            world,
             max_depth,
         }
     }
@@ -33,10 +29,10 @@ impl RayTracer {
             return Color::new(0.0, 0.0, 0.0);
         }
         let mut hit_record = HitRecord::new(ray);
-        if self.hittable_list.hit(&mut hit_record) {
+        if self.world.hit(&mut hit_record) {
             self.raytrace(hit_record.scatter.unwrap(), depth + 1)
         } else {
-            let ray = hit_record.ray;
+            let ray = hit_record.ray; // move the original ray back
             let unit_direction = ray.direction.normalize();
             let a = 0.5 * (unit_direction.y + 1.0);
             let sky_color = Color::new(1.0 - 0.5 * a, 1.0 - 0.3 * a, 1.0);
@@ -58,7 +54,7 @@ impl RayTracer {
                     &self
                         .camera
                         .get_rays_at(i, j)
-                        .into_iter()
+                        .into_par_iter()
                         .map(|ray| self.raytrace(ray, 0))
                         .collect::<Vec<Color>>(),
                 );

@@ -1,4 +1,5 @@
 use crate::aabb::AABB;
+use crate::bvh::BVHNode;
 use crate::color::Color;
 use crate::interval::Interval;
 use crate::material::Material;
@@ -69,7 +70,7 @@ impl HitRecord {
     }
 }
 
-pub trait Hittable {
+pub trait Hittable: Sync {
     // hit_record.ray is the original ray.
     // if hit, update hit_record.hit and scatter and return true
     fn hit(&self, hit_record: &mut HitRecord) -> bool;
@@ -102,30 +103,16 @@ impl Hittable for Object {
     }
 }
 
-#[derive(Default)]
+// a simple wrapper for the BVH tree
 pub struct HittableList {
-    objects: Vec<Box<dyn Hittable>>,
-    aabb: AABB,
+    bvh_node: BVHNode,
 }
 
 impl HittableList {
-    pub fn add(&mut self, object: Box<dyn Hittable>) {
-        self.aabb = self.aabb.union(object.aabb());
-        self.objects.push(object);
-    }
-}
-
-impl Hittable for HittableList {
-    fn hit(&self, hit_record: &mut HitRecord) -> bool {
-        let mut hit_anything = false;
-        for object in &self.objects {
-            hit_anything |= object.hit(hit_record);
+    pub fn new(hittable_list: Vec<Box<dyn Hittable>>) -> Self {
+        Self {
+            bvh_node: BVHNode::new(hittable_list),
         }
-        hit_anything
-    }
-
-    fn aabb(&self) -> AABB {
-        self.aabb
     }
 }
 
@@ -139,5 +126,15 @@ impl Hittable for Empty {
 
     fn aabb(&self) -> AABB {
         AABB::default()
+    }
+}
+
+impl Hittable for HittableList {
+    fn hit(&self, hit_record: &mut HitRecord) -> bool {
+        self.bvh_node.hit(hit_record)
+    }
+
+    fn aabb(&self) -> AABB {
+        self.bvh_node.aabb()
     }
 }
