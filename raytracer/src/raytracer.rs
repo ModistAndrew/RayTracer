@@ -1,6 +1,7 @@
-use indicatif::ProgressBar;
 use std::sync::Arc;
 use std::thread;
+
+use indicatif::ProgressBar;
 
 use crate::camera::Camera;
 use crate::canvas::Canvas;
@@ -43,38 +44,40 @@ impl RayTracer {
 
     fn render_task(
         input: Vec<Ray>,
-        show_progress: bool,
+        progress_bar: Arc<ProgressBar>,
         world: Arc<HittableList>,
         max_depth: u32,
     ) -> Vec<Color> {
-        let progress = if show_progress {
-            ProgressBar::new(input.len() as u64)
-        } else {
-            ProgressBar::hidden()
-        };
-        progress.set_style(
-            indicatif::ProgressStyle::default_bar()
-                .template("{elapsed_precise} {bar:100.cyan/blue} {pos}/{len} {msg}"),
-        );
-        input
+        let ret = input
             .into_iter()
             .map(|ray| {
-                progress.inc(1);
                 Self::raytrace(&world, ray, max_depth)
             })
-            .collect()
+            .collect();
+        progress_bar.inc(1);
+        ret
     }
 
     pub fn render(&mut self, show_progress: bool) {
-        println!("Rendering with multi-threading. The progress bar only shows the progress of the first sample and can be inaccurate.");
         let width = self.canvas.width();
         let height = self.canvas.height();
         let image_size = (width * height) as usize;
         let max_depth = self.max_depth;
         let sample_per_pixel = self.camera.sample_per_pixel();
         let mut threads = Vec::with_capacity(sample_per_pixel as usize);
-        for k in 0..sample_per_pixel {
-            let world = self.world.clone();
+        let progress = if show_progress {
+            ProgressBar::new(sample_per_pixel as u64)
+        } else {
+            ProgressBar::hidden()
+        };
+        progress.set_style(
+            indicatif::ProgressStyle::default_bar()
+                .template("{elapsed_precise} {bar:100.cyan/blue} {pos}/{len}"),
+        );
+        let progress = Arc::new(progress);
+        for _ in 0..sample_per_pixel {
+            let world_arc = self.world.clone();
+            let progress_arc = progress.clone();
             let mut task = Vec::with_capacity(image_size);
             for i in 0..width {
                 for j in 0..height {
@@ -82,7 +85,7 @@ impl RayTracer {
                 }
             }
             threads.push(thread::spawn(move || {
-                Self::render_task(task, show_progress && k == 0, world, max_depth)
+                Self::render_task(task, progress_arc, world_arc, max_depth)
             }));
         }
         let mut result = vec![Color::BLACK; image_size];
@@ -92,7 +95,8 @@ impl RayTracer {
                 result[i] = result[i].blend(thread_result[i], BlendMode::Add);
             }
         });
-        println!("Rendering finished. Writing to the canvas.");
+        progress.finish();
+        // notice that the color should be darkened as it is accumulated from multiple samples
         let lighten_factor = 1.0 / sample_per_pixel as f64;
         for i in 0..width {
             for j in 0..height {
