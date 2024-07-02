@@ -52,6 +52,20 @@ impl AABB {
             self.z.union(other.z),
         )
     }
+
+    pub fn longest_axis(&self) -> usize {
+        if self.x.size() > self.y.size() {
+            if self.x.size() > self.z.size() {
+                0
+            } else {
+                2
+            }
+        } else if self.y.size() > self.z.size() {
+            1
+        } else {
+            2
+        }
+    }
 }
 
 impl ops::Index<usize> for AABB {

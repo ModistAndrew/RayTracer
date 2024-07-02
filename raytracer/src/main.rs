@@ -93,7 +93,7 @@ fn main() {
     let hittable_list = HittableList::new(hittable_vec);
 
     let aspect_ratio = 16.0 / 9.0;
-    let image_width = 1200;
+    let image_width = 400;
     let mut image_height = (image_width as f64 / aspect_ratio) as u32;
     if image_height < 1 {
         image_height = 1;
@@ -114,7 +114,7 @@ fn main() {
         ImageParam {
             image_width,
             image_height,
-            sample_per_pixel: 500,
+            sample_per_pixel: 100,
         },
     );
     let picture = raytracer::canvas::Canvas::new(image_width, image_height);

@@ -1,6 +1,5 @@
 use crate::aabb::AABB;
 use crate::hittable::{Empty, HitRecord, Hittable};
-use rand::Rng;
 
 pub struct BVHNode {
     // left and right are the two children of the node.
@@ -27,7 +26,10 @@ impl BVHNode {
                 hittable_list.pop().unwrap_or(Box::<Empty>::default()),
             );
         }
-        let axis = rand::thread_rng().gen_range(0..3);
+        let aabb = hittable_list
+            .iter()
+            .fold(AABB::default(), |acc, hittable| acc.union(hittable.aabb()));
+        let axis = aabb.longest_axis();
         hittable_list.sort_by(|a, b| a.aabb()[axis].min.total_cmp(&b.aabb()[axis].min));
         let mid = hittable_list.len() / 2;
         BVHNode::from(
