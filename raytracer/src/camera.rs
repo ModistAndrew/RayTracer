@@ -2,12 +2,12 @@ use crate::color::Color;
 use rand::{random, Rng};
 
 use crate::ray::Ray;
-use crate::vec3d::Vec3d;
+use crate::vec3::Vec3;
 
 pub struct PerspectiveParam {
-    pub look_from: Vec3d,
-    pub look_at: Vec3d,
-    pub view_up: Vec3d,
+    pub look_from: Vec3,
+    pub look_at: Vec3,
+    pub view_up: Vec3,
 }
 
 pub struct LensParam {
@@ -24,16 +24,16 @@ pub struct ImageParam {
 }
 
 pub struct Camera {
-    origin: Vec3d,
-    viewport_upper_left: Vec3d,
-    viewport_u: Vec3d,
-    viewport_v: Vec3d,
+    origin: Vec3,
+    viewport_upper_left: Vec3,
+    viewport_u: Vec3,
+    viewport_v: Vec3,
     pixel_width_ratio: f64,
     pixel_height_ratio: f64,
     sample_per_pixel: u32,
     color: Color,
-    defocus_disk_u: Vec3d,
-    defocus_disk_v: Vec3d,
+    defocus_disk_u: Vec3,
+    defocus_disk_v: Vec3,
 }
 
 impl Camera {
@@ -85,8 +85,8 @@ impl Camera {
         Ray::new(origin, direction, self.color, random())
     }
 
-    fn defocus_disk_sample(&self) -> Vec3d {
-        let p = Vec3d::random_in_unit_disk();
+    fn defocus_disk_sample(&self) -> Vec3 {
+        let p = Vec3::random_in_unit_disk();
         self.origin + (p.x * self.defocus_disk_u) + (p.y * self.defocus_disk_v)
     }
 

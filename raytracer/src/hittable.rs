@@ -3,12 +3,12 @@ use crate::interval::Interval;
 use crate::material::Material;
 use crate::ray::Ray;
 use crate::shape::Shape;
-use crate::vec3d::Vec3d;
+use crate::vec3::Vec3;
 
 pub struct Hit {
     pub t: f64,
-    pub position: Vec3d,  // the hit position
-    pub normal: Vec3d,    // always normalized and points opposite to the ray
+    pub position: Vec3,  // the hit position
+    pub normal: Vec3,    // always normalized and points opposite to the ray
     pub front_face: bool, // whether outside the object
 }
 
@@ -28,7 +28,7 @@ impl HitRecord {
         }
     }
 
-    pub fn set_hit(&mut self, t: f64, outward_normal: Vec3d) {
+    pub fn set_hit(&mut self, t: f64, outward_normal: Vec3) {
         let front_face = self.ray.direction.dot(outward_normal) < 0.0;
         let normal = if front_face {
             outward_normal
@@ -44,7 +44,7 @@ impl HitRecord {
         });
     }
 
-    pub fn set_scatter(&mut self, direction: Vec3d, blender: Color) {
+    pub fn set_scatter(&mut self, direction: Vec3, blender: Color) {
         self.scatter = Some(Ray::new(
             self.get_hit().position,
             direction,

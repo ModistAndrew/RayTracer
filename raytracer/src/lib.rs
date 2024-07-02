@@ -7,4 +7,5 @@ pub mod material;
 pub mod ray;
 pub mod raytracer;
 pub mod shape;
-pub mod vec3d;
+pub mod vec3;
+pub mod aabb;

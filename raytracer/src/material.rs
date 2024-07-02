@@ -1,6 +1,6 @@
 use crate::color::Color;
 use crate::hittable::HitRecord;
-use crate::vec3d::Vec3d;
+use crate::vec3::Vec3;
 
 pub trait Material {
     // hit_record.ray and hit_record.hit are the original ray and hit record. may contain the former scattered ray. update hit_record.scatter
@@ -19,7 +19,7 @@ impl Lambertian {
 
 impl Material for Lambertian {
     fn scatter(&self, hit_record: &mut HitRecord) {
-        let mut scatter_direction = hit_record.get_hit().normal + Vec3d::random_unit_vector();
+        let mut scatter_direction = hit_record.get_hit().normal + Vec3::random_unit_vector();
         if scatter_direction.near_zero() {
             scatter_direction = hit_record.get_hit().normal;
         }
@@ -44,7 +44,7 @@ impl Material for Metal {
             .ray
             .direction
             .reflect(hit_record.get_hit().normal);
-        let reflected = reflected.normalize() + Vec3d::random_unit_vector() * self.fuzz;
+        let reflected = reflected.normalize() + Vec3::random_unit_vector() * self.fuzz;
         hit_record.set_scatter(
             reflected,
             if reflected.dot(hit_record.get_hit().normal) > 0.0 {

@@ -1,20 +1,26 @@
 use crate::hittable::HitRecord;
 use crate::interval::Interval;
-use crate::vec3d::Vec3d;
+use crate::vec3::Vec3;
 
 pub trait Shape {
     // hit_record.ray is the original ray. may contain the former hit record. if hit, update hit_record.hit and return true
     fn hit(&self, hit_record: &mut HitRecord, interval: Interval) -> bool;
 }
 
+pub struct Core {
+    center: Vec3,
+    direction: Vec3,
+
+}
+
 pub struct Sphere {
-    center: Vec3d,
+    center: Vec3,
     radius: f64,
-    direction: Vec3d,
+    direction: Vec3,
 }
 
 impl Sphere {
-    pub fn new(center: Vec3d, radius: f64, direction: Vec3d) -> Self {
+    pub fn new(center: Vec3, radius: f64, direction: Vec3) -> Self {
         Self {
             center,
             radius,

@@ -1,3 +1,5 @@
+use std::ops::Add;
+
 #[derive(Debug, Clone, Copy)]
 pub struct Interval {
     pub min: f64,
@@ -18,6 +20,10 @@ impl Interval {
         Self { min, max }
     }
 
+    pub fn min_max(a: f64, b: f64) -> Self {
+        Interval::new(a.min(b), a.max(b))
+    }
+
     pub fn size(&self) -> f64 {
         self.max - self.min
     }
@@ -32,6 +38,20 @@ impl Interval {
 
     pub fn clamp(&self, x: f64) -> f64 {
         x.min(self.max).max(self.min)
+    }
+
+    pub fn intersect(&mut self, other: Self) {
+        self.min = self.min.max(other.min);
+        self.max = self.max.min(other.max);
+    }
+
+    pub fn union(&mut self, other: Self) {
+        self.min = self.min.min(other.min);
+        self.max = self.max.max(other.max);
+    }
+
+    pub fn empty(&self) -> bool {
+        self.min > self.max
     }
 }
 
