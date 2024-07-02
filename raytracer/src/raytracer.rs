@@ -50,8 +50,7 @@ impl RayTracer {
         };
         progress.set_style(
             indicatif::ProgressStyle::default_bar()
-                .template("{elapsed_precise} {bar:100.cyan/blue} {pos}/{len} {msg}")
-                .unwrap(),
+                .template("{elapsed_precise} {bar:100.cyan/blue} {pos}/{len} {msg}"),
         );
         for i in 0..width {
             for j in 0..height {
