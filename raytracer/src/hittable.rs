@@ -105,10 +105,12 @@ impl Hittable for Object {
 #[derive(Default)]
 pub struct HittableList {
     objects: Vec<Box<dyn Hittable>>,
+    aabb: AABB,
 }
 
 impl HittableList {
     pub fn add(&mut self, object: Box<dyn Hittable>) {
+        self.aabb = self.aabb.union(object.aabb());
         self.objects.push(object);
     }
 }
@@ -123,6 +125,19 @@ impl Hittable for HittableList {
     }
 
     fn aabb(&self) -> AABB {
-        todo!()
+        self.aabb
+    }
+}
+
+#[derive(Default)]
+pub struct Empty;
+
+impl Hittable for Empty {
+    fn hit(&self, _hit_record: &mut HitRecord) -> bool {
+        false
+    }
+
+    fn aabb(&self) -> AABB {
+        AABB::default()
     }
 }
