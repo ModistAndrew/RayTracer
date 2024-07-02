@@ -1,3 +1,4 @@
+use crate::aabb::AABB;
 use crate::color::Color;
 use crate::interval::Interval;
 use crate::material::Material;
@@ -7,8 +8,8 @@ use crate::vec3::Vec3;
 
 pub struct Hit {
     pub t: f64,
-    pub position: Vec3,  // the hit position
-    pub normal: Vec3,    // always normalized and points opposite to the ray
+    pub position: Vec3,   // the hit position
+    pub normal: Vec3,     // always normalized and points opposite to the ray
     pub front_face: bool, // whether outside the object
 }
 
@@ -69,9 +70,12 @@ impl HitRecord {
 }
 
 pub trait Hittable {
-    // hit_record.ray is the original ray. may contain the former hit record. if hit, update hit_record.scatter and return true
-    // hit_record.hit is for internal use and should not be accessed
+    // hit_record.ray is the original ray.
+    // if hit, update hit_record.hit and scatter and return true
     fn hit(&self, hit_record: &mut HitRecord) -> bool;
+
+    // return the bounding box for hit testing
+    fn aabb(&self) -> AABB;
 }
 
 pub struct Object {
@@ -91,6 +95,10 @@ impl Hittable for Object {
             self.material.scatter(hit_record);
             true
         }
+    }
+
+    fn aabb(&self) -> AABB {
+        self.shape.aabb()
     }
 }
 
@@ -112,5 +120,9 @@ impl Hittable for HittableList {
             hit_anything |= object.hit(hit_record);
         }
         hit_anything
+    }
+
+    fn aabb(&self) -> AABB {
+        todo!()
     }
 }

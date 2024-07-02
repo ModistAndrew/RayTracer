@@ -33,10 +33,7 @@ impl RayTracer {
             return Color::new(0.0, 0.0, 0.0);
         }
         let mut hit_record = HitRecord::new(ray);
-        if self
-            .hittable_list
-            .hit(&mut hit_record)
-        {
+        if self.hittable_list.hit(&mut hit_record) {
             self.raytrace(hit_record.scatter.unwrap(), depth + 1)
         } else {
             let ray = hit_record.ray;

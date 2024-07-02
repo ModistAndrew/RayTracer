@@ -1,3 +1,4 @@
+pub mod aabb;
 pub mod camera;
 pub mod canvas;
 pub mod color;
@@ -8,4 +9,3 @@ pub mod ray;
 pub mod raytracer;
 pub mod shape;
 pub mod vec3;
-pub mod aabb;

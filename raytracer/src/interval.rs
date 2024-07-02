@@ -1,8 +1,13 @@
-
 #[derive(Debug, Clone, Copy)]
 pub struct Interval {
     pub min: f64,
     pub max: f64,
+}
+
+impl Default for Interval {
+    fn default() -> Self {
+        Self::EMPTY
+    }
 }
 
 impl Interval {
@@ -51,23 +56,19 @@ impl Interval {
         self.min = self.min.max(min);
     }
 
-    pub fn intersect(&mut self, other: Self) {
-        self.min = self.min.max(other.min);
-        self.max = self.max.min(other.max);
-    }
-
-    pub fn union(&mut self, other: Self) {
-        self.min = self.min.min(other.min);
-        self.max = self.max.max(other.max);
-    }
-
     pub fn empty(&self) -> bool {
         self.min > self.max
     }
-}
 
-impl Default for Interval {
-    fn default() -> Self {
-        Self::EMPTY
+    pub fn intersect(self, other: Self) -> Self {
+        Interval::new(self.min.max(other.min), self.max.min(other.max))
+    }
+
+    pub fn union(self, other: Self) -> Self {
+        Interval::new(self.min.min(other.min), self.max.max(other.max))
+    }
+
+    pub fn moved(self, x: f64) -> Self {
+        Interval::new(self.min + x, self.max + x)
     }
 }

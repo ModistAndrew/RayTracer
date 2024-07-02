@@ -1,6 +1,6 @@
 use crate::color::Color;
-use rand::{random, Rng};
 use crate::interval::Interval;
+use rand::{random, Rng};
 
 use crate::ray::Ray;
 use crate::vec3::Vec3;
