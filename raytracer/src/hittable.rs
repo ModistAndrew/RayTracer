@@ -70,7 +70,7 @@ impl HitRecord {
     }
 }
 
-pub trait Hittable: Sync {
+pub trait Hittable: Sync + Send {
     // hit_record.ray is the original ray.
     // if hit, update hit_record.hit and scatter and return true
     fn hit(&self, hit_record: &mut HitRecord) -> bool;

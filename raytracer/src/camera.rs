@@ -91,14 +91,14 @@ impl Camera {
         self.origin + (p.x * self.defocus_disk_u) + (p.y * self.defocus_disk_v)
     }
 
-    pub fn get_rays_at(&self, i: u32, j: u32) -> Vec<Ray> {
-        let mut rays = Vec::with_capacity(self.sample_per_pixel as usize);
+    pub fn get_ray_at(&self, i: u32, j: u32) -> Ray {
         let mut rng = rand::thread_rng();
-        for _ in 0..self.sample_per_pixel {
-            let u = (i as f64 + rng.gen_range(-0.5..0.5)) * self.pixel_width_ratio;
-            let v = (j as f64 + rng.gen_range(-0.5..0.5)) * self.pixel_height_ratio;
-            rays.push(self.get_ray(u, v));
-        }
-        rays
+        let u = (i as f64 + rng.gen_range(-0.5..0.5)) * self.pixel_width_ratio;
+        let v = (j as f64 + rng.gen_range(-0.5..0.5)) * self.pixel_height_ratio;
+        self.get_ray(u, v)
+    }
+
+    pub fn sample_per_pixel(&self) -> u32 {
+        self.sample_per_pixel
     }
 }

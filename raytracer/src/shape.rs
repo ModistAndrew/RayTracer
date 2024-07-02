@@ -2,7 +2,7 @@ use crate::aabb::AABB;
 use crate::hittable::HitRecord;
 use crate::vec3::Vec3;
 
-pub trait Shape: Sync {
+pub trait Shape: Sync + Send {
     // hit_record.ray is the original ray. may contain the former hit record. if hit, update hit_record.hit and ray and return true
     fn hit(&self, hit_record: &mut HitRecord) -> bool;
     fn aabb(&self) -> AABB;

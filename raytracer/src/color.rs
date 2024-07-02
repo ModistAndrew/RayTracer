@@ -46,17 +46,8 @@ impl Color {
         Self::new(r, g, b)
     }
 
-    pub fn mix(colors: &[Color]) -> Self {
-        let mut r = 0.0;
-        let mut g = 0.0;
-        let mut b = 0.0;
-        for color in colors {
-            r += color.r;
-            g += color.g;
-            b += color.b;
-        }
-        let n = colors.len() as f64;
-        Self::new(r / n, g / n, b / n)
+    pub fn lighten(self, factor: f64) -> Color {
+        Self::new(self.r * factor, self.g * factor, self.b * factor)
     }
 
     fn linear_to_gamma(linear_component: f64) -> f64 {

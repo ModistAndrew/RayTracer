@@ -118,7 +118,7 @@ fn main() {
         },
     );
     let picture = raytracer::canvas::Canvas::new(image_width, image_height);
-    let mut raytracer = RayTracer::new(camera, picture, Box::new(hittable_list), 50);
+    let mut raytracer = RayTracer::new(camera, picture, hittable_list, 50);
     raytracer.render(true);
     raytracer.save("output/book1/image24.png");
 }
