@@ -1,5 +1,6 @@
 use crate::color::Color;
 use rand::{random, Rng};
+use crate::interval::Interval;
 
 use crate::ray::Ray;
 use crate::vec3::Vec3;
@@ -82,7 +83,7 @@ impl Camera {
         let origin = self.defocus_disk_sample();
         let direction =
             self.viewport_upper_left + self.viewport_u * u + self.viewport_v * v - origin;
-        Ray::new(origin, direction, self.color, random())
+        Ray::new(origin, direction, self.color, random(), Interval::POSITIVE)
     }
 
     fn defocus_disk_sample(&self) -> Vec3 {

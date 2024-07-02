@@ -4,7 +4,6 @@ use crate::camera::Camera;
 use crate::canvas::Canvas;
 use crate::color::{BlendMode, Color};
 use crate::hittable::{HitRecord, Hittable, HittableList};
-use crate::interval::Interval;
 use crate::ray::Ray;
 
 pub struct RayTracer {
@@ -34,10 +33,9 @@ impl RayTracer {
             return Color::new(0.0, 0.0, 0.0);
         }
         let mut hit_record = HitRecord::new(ray);
-        const MIN_DISTANCE: f64 = 0.001;
         if self
             .hittable_list
-            .hit(&mut hit_record, Interval::new(MIN_DISTANCE, f64::INFINITY))
+            .hit(&mut hit_record)
         {
             self.raytrace(hit_record.scatter.unwrap(), depth + 1)
         } else {

@@ -1,16 +1,16 @@
+use crate::aabb::AABB;
 use crate::hittable::HitRecord;
-use crate::interval::Interval;
 use crate::vec3::Vec3;
 
 pub trait Shape {
     // hit_record.ray is the original ray. may contain the former hit record. if hit, update hit_record.hit and return true
-    fn hit(&self, hit_record: &mut HitRecord, interval: Interval) -> bool;
+    fn hit(&self, hit_record: &mut HitRecord) -> bool;
 }
 
-pub struct Core {
+pub struct Skeleton {
     center: Vec3,
     direction: Vec3,
-
+    aabb: AABB,
 }
 
 pub struct Sphere {
@@ -30,8 +30,9 @@ impl Sphere {
 }
 
 impl Shape for Sphere {
-    fn hit(&self, hit_record: &mut HitRecord, interval: Interval) -> bool {
+    fn hit(&self, hit_record: &mut HitRecord) -> bool {
         let ray = &hit_record.ray;
+        let interval = ray.interval;
         let oc = self.center + self.direction * ray.time - ray.origin;
         let a = ray.direction.length_squared();
         let h = ray.direction.dot(oc);

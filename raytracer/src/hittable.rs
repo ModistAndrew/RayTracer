@@ -42,6 +42,7 @@ impl HitRecord {
             normal,
             front_face,
         });
+        self.ray.interval.limit_max(t)
     }
 
     pub fn set_scatter(&mut self, direction: Vec3, blender: Color) {
@@ -50,6 +51,7 @@ impl HitRecord {
             direction,
             blender.blend(self.ray.color, crate::color::BlendMode::Mul),
             self.ray.time,
+            Interval::POSITIVE,
         ));
     }
 
@@ -69,7 +71,7 @@ impl HitRecord {
 pub trait Hittable {
     // hit_record.ray is the original ray. may contain the former hit record. if hit, update hit_record.scatter and return true
     // hit_record.hit is for internal use and should not be accessed
-    fn hit(&self, hit_record: &mut HitRecord, interval: Interval) -> bool;
+    fn hit(&self, hit_record: &mut HitRecord) -> bool;
 }
 
 pub struct Object {
@@ -84,8 +86,8 @@ impl Object {
 }
 
 impl Hittable for Object {
-    fn hit(&self, hit_record: &mut HitRecord, interval: Interval) -> bool {
-        self.shape.hit(hit_record, interval) && {
+    fn hit(&self, hit_record: &mut HitRecord) -> bool {
+        self.shape.hit(hit_record) && {
             self.material.scatter(hit_record);
             true
         }
@@ -104,14 +106,10 @@ impl HittableList {
 }
 
 impl Hittable for HittableList {
-    fn hit(&self, hit_record: &mut HitRecord, interval: Interval) -> bool {
+    fn hit(&self, hit_record: &mut HitRecord) -> bool {
         let mut hit_anything = false;
-        let mut closest = interval.max;
         for object in &self.objects {
-            if object.hit(hit_record, Interval::new(interval.min, closest)) {
-                closest = hit_record.get_hit().t;
-                hit_anything = true;
-            }
+            hit_anything |= object.hit(hit_record);
         }
         hit_anything
     }
