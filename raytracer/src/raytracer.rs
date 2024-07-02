@@ -48,6 +48,11 @@ impl RayTracer {
         } else {
             ProgressBar::hidden()
         };
+        progress.set_style(
+            indicatif::ProgressStyle::default_bar()
+                .template("{elapsed_precise} {bar:100.cyan/blue} {pos}/{len} {msg}")
+                .unwrap()
+        );
         for i in 0..width {
             for j in 0..height {
                 let color = Color::mix(
@@ -60,6 +65,7 @@ impl RayTracer {
                 );
                 self.canvas.write(i, j, color);
                 progress.inc(1);
+                progress.set_message(format!("Rendering: {}x{}", i, j));
             }
         }
         progress.finish();
