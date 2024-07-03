@@ -12,6 +12,8 @@ pub struct Hit {
     pub position: Vec3,   // the hit position
     pub normal: Vec3,     // always normalized and points opposite to the ray
     pub front_face: bool, // whether outside the object
+    pub u: f64,
+    pub v: f64, // texture coordinate
 }
 
 pub struct HitRecord {
@@ -43,6 +45,8 @@ impl HitRecord {
             position,
             normal,
             front_face,
+            u: 0.0,
+            v: 0.0,
         });
         self.ray.interval.limit_max(t)
     }

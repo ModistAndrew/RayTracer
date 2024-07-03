@@ -1,5 +1,6 @@
 use crate::color::Color;
 use crate::hittable::HitRecord;
+use crate::texture::Texture;
 use crate::vec3::Vec3;
 
 pub trait Material: Sync + Send {
@@ -8,12 +9,12 @@ pub trait Material: Sync + Send {
 }
 
 pub struct Lambertian {
-    albedo: Color,
+    texture: Box<dyn Texture>,
 }
 
 impl Lambertian {
-    pub fn new(albedo: Color) -> Self {
-        Self { albedo }
+    pub fn new(texture: Box<dyn Texture>) -> Self {
+        Self { texture }
     }
 }
 
@@ -23,7 +24,7 @@ impl Material for Lambertian {
         if scatter_direction.near_zero() {
             scatter_direction = hit_record.get_hit().normal;
         }
-        hit_record.set_scatter(scatter_direction, self.albedo);
+        hit_record.set_scatter(scatter_direction, self.texture.value(hit_record));
     }
 }
 

@@ -6,12 +6,13 @@ use raytracer::hittable::{Hittable, HittableList, Object};
 use raytracer::material::{Dielectric, Lambertian, Metal};
 use raytracer::raytracer::RayTracer;
 use raytracer::shape::Sphere;
+use raytracer::texture::{CheckerTexture, SolidColor};
 use raytracer::vec3::Vec3;
 
 fn create_lambertian(center: Vec3, radius: f64, albedo: Color) -> Box<Object> {
     Box::new(Object::new(
         Box::new(Sphere::new(center, radius, None)),
-        Box::new(Lambertian::new(albedo)),
+        Box::new(Lambertian::new(Box::new(SolidColor::new(albedo)))),
     ))
 }
 
@@ -37,16 +38,26 @@ fn create_lambertian_moving(
 ) -> Box<Object> {
     Box::new(Object::new(
         Box::new(Sphere::new(center, radius, Some(direction))),
-        Box::new(Lambertian::new(albedo)),
+        Box::new(Lambertian::new(Box::new(SolidColor::new(albedo)))),
+    ))
+}
+
+fn create_lambertian_checker(center: Vec3, radius: f64) -> Box<Object> {
+    Box::new(Object::new(
+        Box::new(Sphere::new(center, radius, None)),
+        Box::new(Lambertian::new(Box::new(CheckerTexture::from_color(
+            Color::new(0.2, 0.3, 0.1),
+            Color::new(0.9, 0.9, 0.9),
+            0.32,
+        )))),
     ))
 }
 
 fn main() {
     let mut hittable_vec = Vec::<Box<dyn Hittable>>::default();
-    hittable_vec.push(create_lambertian(
+    hittable_vec.push(create_lambertian_checker(
         Vec3::new(0.0, -1000.0, 0.0),
         1000.0,
-        Color::new(0.5, 0.5, 0.5),
     ));
     let mut rng = rand::thread_rng();
     for a in -11..11 {
@@ -120,5 +131,5 @@ fn main() {
     let picture = raytracer::canvas::Canvas::new(image_width, image_height);
     let mut raytracer = RayTracer::new(camera, picture, hittable_list, 50);
     raytracer.render(true);
-    raytracer.save("output/book1/image24.png");
+    raytracer.save("output/book1/image25.png");
 }

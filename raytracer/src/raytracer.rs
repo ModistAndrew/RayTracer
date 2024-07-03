@@ -50,9 +50,7 @@ impl RayTracer {
     ) -> Vec<Color> {
         let ret = input
             .into_iter()
-            .map(|ray| {
-                Self::raytrace(&world, ray, max_depth)
-            })
+            .map(|ray| Self::raytrace(&world, ray, max_depth))
             .collect();
         progress_bar.inc(1);
         ret

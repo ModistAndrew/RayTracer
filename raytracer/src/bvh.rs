@@ -10,32 +10,26 @@ pub struct BVHNode {
 }
 
 impl BVHNode {
-    fn from(left: Box<dyn Hittable>, right: Box<dyn Hittable>) -> Self {
-        Self {
-            aabb: left.aabb().union(right.aabb()),
-            left,
-            right,
-        }
-    }
-
     // take a list of hittable and build a BVH tree
     pub fn new(mut hittable_list: Vec<Box<dyn Hittable>>) -> Self {
-        if hittable_list.len() <= 2 {
-            return BVHNode::from(
-                hittable_list.pop().unwrap_or(Box::<Empty>::default()),
-                hittable_list.pop().unwrap_or(Box::<Empty>::default()),
-            );
-        }
         let aabb = hittable_list
             .iter()
             .fold(AABB::default(), |acc, hittable| acc.union(hittable.aabb()));
+        if hittable_list.len() <= 2 {
+            return Self {
+                aabb,
+                left: hittable_list.pop().unwrap_or(Box::<Empty>::default()),
+                right: hittable_list.pop().unwrap_or(Box::<Empty>::default()),
+            };
+        }
         let axis = aabb.longest_axis();
         hittable_list.sort_by(|a, b| a.aabb()[axis].min.total_cmp(&b.aabb()[axis].min));
         let mid = hittable_list.len() / 2;
-        BVHNode::from(
-            Box::new(BVHNode::new(hittable_list.split_off(mid))),
-            Box::new(BVHNode::new(hittable_list)),
-        )
+        Self {
+            aabb,
+            left: Box::new(BVHNode::new(hittable_list.split_off(mid))),
+            right: Box::new(BVHNode::new(hittable_list)),
+        }
     }
 }
 
