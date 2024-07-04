@@ -151,10 +151,8 @@ fn bouncing_spheres() {
         },
     );
     let picture = raytracer::canvas::Canvas::empty(image_width, image_height);
-    let mut raytracer = RayTracer::new(camera, picture, hittable_list.build(), 50);
-
-    raytracer.render(true);
-    raytracer.save("output/book2/image2.png");
+    let raytracer = RayTracer::new(camera, picture, hittable_list.build(), 50);
+    raytracer.render().save("output/book2/image2.png");
 }
 
 fn checkered_spheres() {
@@ -183,10 +181,8 @@ fn checkered_spheres() {
         },
     );
     let picture = raytracer::canvas::Canvas::empty(image_width, image_height);
-    let mut raytracer = RayTracer::new(camera, picture, hittable_list.build(), 50);
-
-    raytracer.render(true);
-    raytracer.save("output/book2/image3.png");
+    let raytracer = RayTracer::new(camera, picture, hittable_list.build(), 50);
+    raytracer.render().save("output/book2/image3.png");
 }
 
 fn earth() {
@@ -218,10 +214,8 @@ fn earth() {
         },
     );
     let picture = raytracer::canvas::Canvas::empty(image_width, image_height);
-    let mut raytracer = RayTracer::new(camera, picture, hittable_list.build(), 50);
-
-    raytracer.render(true);
-    raytracer.save("output/book2/image5.png");
+    let raytracer = RayTracer::new(camera, picture, hittable_list.build(), 50);
+    raytracer.render().save("output/book2/image5.png");
 }
 
 fn main() {

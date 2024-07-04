@@ -1,4 +1,4 @@
-use std::sync::Arc;
+use std::sync::{Arc, Mutex};
 use std::thread;
 
 use crate::bvh::BVHNode;
@@ -13,7 +13,7 @@ use crate::ray::Ray;
 pub struct RayTracer {
     camera: Camera,
     canvas: Canvas,
-    world: Arc<BVHNode>, // Arc is used to share the world between threads
+    world: BVHNode, // Arc is used to share the world between threads
     max_depth: u32,
 }
 
@@ -22,12 +22,12 @@ impl RayTracer {
         Self {
             camera,
             canvas,
-            world: Arc::new(world),
+            world,
             max_depth,
         }
     }
 
-    fn raytrace(world: &Arc<BVHNode>, ray: Ray, left_depth: u32) -> Color {
+    fn raytrace(world: &BVHNode, ray: Ray, left_depth: u32) -> Color {
         if left_depth == 0 || ray.color.is_black() {
             return Color::new(0.0, 0.0, 0.0);
         }
@@ -44,71 +44,76 @@ impl RayTracer {
     }
 
     fn render_task(
-        input: Vec<Ray>,
         progress_bar: Arc<ProgressBar>,
-        world: Arc<BVHNode>,
-        max_depth: u32,
-    ) -> Vec<Color> {
-        let ret = input
-            .into_iter()
-            .map(|ray| Self::raytrace(&world, ray, max_depth))
-            .collect();
+        raytracer: Arc<Self>,
+        output: Arc<Mutex<Vec<Color>>>,
+    ) {
+        let width = raytracer.canvas.width();
+        let height = raytracer.canvas.height();
+        let image_size = (width * height) as usize;
+        let mut result = Vec::with_capacity(image_size);
+        for i in 0..width {
+            for j in 0..height {
+                let ray = raytracer.camera.get_ray_at(i, j);
+                let color = Self::raytrace(&raytracer.world, ray, raytracer.max_depth);
+                result.push(color);
+            }
+        }
+        let mut output = output.lock().unwrap();
+        for i in 0..image_size {
+            output[i].blend_assign(result[i], BlendMode::Add);
+        }
         progress_bar.inc(1);
-        ret
     }
 
-    pub fn render(&mut self, show_progress: bool) {
-        let width = self.canvas.width();
-        let height = self.canvas.height();
+    pub fn render(self) -> Self {
+        let raytracer = self;
+        let width = raytracer.canvas.width();
+        let height = raytracer.canvas.height();
         let image_size = (width * height) as usize;
-        let max_depth = self.max_depth;
-        let sample_per_pixel = self.camera.sample_per_pixel();
+        let sample_per_pixel = raytracer.camera.sample_per_pixel();
         let mut threads = Vec::with_capacity(sample_per_pixel as usize);
-        let progress = if show_progress {
-            ProgressBar::new(sample_per_pixel as u64)
-        } else {
-            ProgressBar::hidden()
-        };
+        let progress = ProgressBar::new(sample_per_pixel as u64);
         progress.set_style(
             indicatif::ProgressStyle::default_bar()
                 .template("{elapsed_precise} {bar:100.cyan/blue} {pos}/{len}"),
         );
         let progress = Arc::new(progress);
+        let raytracer = Arc::new(raytracer);
+        let output = Arc::new(Mutex::new(vec![Color::BLACK; image_size]));
         for _ in 0..sample_per_pixel {
-            let world_arc = self.world.clone();
-            let progress_arc = progress.clone();
-            let mut task = Vec::with_capacity(image_size);
-            for i in 0..width {
-                for j in 0..height {
-                    task.push(self.camera.get_ray_at(i, j));
-                }
-            }
+            let progress_copy = progress.clone();
+            let raytracer_copy = raytracer.clone();
+            let output_copy = output.clone();
             threads.push(thread::spawn(move || {
-                Self::render_task(task, progress_arc, world_arc, max_depth)
+                Self::render_task(progress_copy, raytracer_copy, output_copy)
             }));
         }
-        let mut result = vec![Color::BLACK; image_size];
-        threads.into_iter().for_each(|thread| {
-            let thread_result = thread.join().unwrap();
-            for i in 0..image_size {
-                result[i].blend_assign(thread_result[i], BlendMode::Add);
-            }
-        });
+        // wait for all threads to finish
+        threads
+            .into_iter()
+            .for_each(|thread| thread.join().unwrap());
+        // unwrap the Arcs
+        let mut raytracer = Arc::into_inner(raytracer).unwrap();
+        let output = Arc::into_inner(output).unwrap().into_inner().unwrap();
+        let progress = Arc::into_inner(progress).unwrap();
         progress.finish();
         // notice that the color should be darkened as it is accumulated from multiple samples
         let lighten_factor = 1.0 / sample_per_pixel as f64;
         for i in 0..width {
             for j in 0..height {
-                self.canvas.write(
+                raytracer.canvas.write(
                     i,
                     j,
-                    result[(i * height + j) as usize].lighten(lighten_factor),
+                    output[(i * height + j) as usize].lighten(lighten_factor),
                 );
             }
         }
+        raytracer
     }
 
-    pub fn save(&self, path: &str) {
+    pub fn save(self, path: &str) -> Self {
         self.canvas.save(path);
+        self
     }
 }
