@@ -1,5 +1,6 @@
 use rand::Rng;
 use std::ops;
+use std::ops::{AddAssign, SubAssign};
 
 #[derive(Debug, Clone, Copy, Default)]
 pub struct Vec3 {
@@ -113,13 +114,6 @@ impl ops::Mul<f64> for Vec3 {
     }
 }
 
-impl ops::Mul<Vec3> for f64 {
-    type Output = Vec3;
-    fn mul(self, v: Vec3) -> Vec3 {
-        Vec3::new(self * v.x, self * v.y, self * v.z)
-    }
-}
-
 impl ops::Mul for Vec3 {
     type Output = Vec3;
 
@@ -137,6 +131,22 @@ impl ops::Div<f64> for Vec3 {
 
     fn div(self, t: f64) -> Vec3 {
         Vec3::new(self.x / t, self.y / t, self.z / t)
+    }
+}
+
+impl AddAssign for Vec3 {
+    fn add_assign(&mut self, other: Vec3) {
+        self.x += other.x;
+        self.y += other.y;
+        self.z += other.z;
+    }
+}
+
+impl SubAssign for Vec3 {
+    fn sub_assign(&mut self, other: Vec3) {
+        self.x -= other.x;
+        self.y -= other.y;
+        self.z -= other.z;
     }
 }
 

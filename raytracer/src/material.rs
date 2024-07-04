@@ -1,22 +1,14 @@
 use crate::color::Color;
 use crate::hittable::HitRecord;
-use crate::texture::Texture;
 use crate::vec3::Vec3;
 
-pub trait Material: Sync + Send {
-    // hit_record.ray and hit_record.hit are the original ray and hit record. may contain the former scattered ray. update hit_record.scatter
+pub trait Material {
+    // hit_record.ray and hit_record.hit are the original ray and hit record.
+    // may contain the former scattered ray. update hit_record.scatter
     fn scatter(&self, hit_record: &mut HitRecord);
 }
 
-pub struct Lambertian {
-    texture: Box<dyn Texture>,
-}
-
-impl Lambertian {
-    pub fn new(texture: Box<dyn Texture>) -> Self {
-        Self { texture }
-    }
-}
+pub struct Lambertian;
 
 impl Material for Lambertian {
     fn scatter(&self, hit_record: &mut HitRecord) {
@@ -24,18 +16,17 @@ impl Material for Lambertian {
         if scatter_direction.near_zero() {
             scatter_direction = hit_record.get_hit().normal;
         }
-        hit_record.set_scatter(scatter_direction, self.texture.value(hit_record));
+        hit_record.set_scatter(scatter_direction, Color::WHITE);
     }
 }
 
 pub struct Metal {
-    albedo: Color,
     fuzz: f64,
 }
 
 impl Metal {
-    pub fn new(albedo: Color, fuzz: f64) -> Self {
-        Self { albedo, fuzz }
+    pub fn new(fuzz: f64) -> Self {
+        Self { fuzz }
     }
 }
 
@@ -49,9 +40,9 @@ impl Material for Metal {
         hit_record.set_scatter(
             reflected,
             if reflected.dot(hit_record.get_hit().normal) > 0.0 {
-                self.albedo
+                Color::WHITE
             } else {
-                Color::new(0.0, 0.0, 0.0)
+                Color::BLACK
             },
         );
     }
@@ -92,6 +83,6 @@ impl Material for Dielectric {
             let r_out_parallel = -normal * (1.0 - r_out_perp.length_squared()).sqrt();
             r_out_perp + r_out_parallel
         };
-        hit_record.set_scatter(direction, Color::new(1.0, 1.0, 1.0));
+        hit_record.set_scatter(direction, Color::WHITE);
     }
 }

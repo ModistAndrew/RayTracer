@@ -6,6 +6,7 @@ pub struct BVHNode {
     // left isn't necessarily smaller than right, but each child is concentrated on one side of the parent for aabb pruning
     left: Box<dyn Hittable>,
     right: Box<dyn Hittable>,
+    // the bounding box of the node. cached for performance
     aabb: AABB,
 }
 

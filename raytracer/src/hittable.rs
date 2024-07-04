@@ -5,6 +5,7 @@ use crate::interval::Interval;
 use crate::material::Material;
 use crate::ray::Ray;
 use crate::shape::Shape;
+use crate::texture::UV;
 use crate::vec3::Vec3;
 
 pub struct Hit {
@@ -12,8 +13,7 @@ pub struct Hit {
     pub position: Vec3,   // the hit position
     pub normal: Vec3,     // always normalized and points opposite to the ray
     pub front_face: bool, // whether outside the object
-    pub u: f64,
-    pub v: f64, // texture coordinate
+    pub uv: UV,
 }
 
 pub struct HitRecord {
@@ -32,7 +32,7 @@ impl HitRecord {
         }
     }
 
-    pub fn set_hit(&mut self, t: f64, outward_normal: Vec3) {
+    pub fn set_hit(&mut self, t: f64, outward_normal: Vec3, uv: UV) {
         let front_face = self.ray.direction.dot(outward_normal) < 0.0;
         let normal = if front_face {
             outward_normal
@@ -45,8 +45,7 @@ impl HitRecord {
             position,
             normal,
             front_face,
-            u: 0.0,
-            v: 0.0,
+            uv,
         });
         self.ray.interval.limit_max(t)
     }
@@ -63,6 +62,16 @@ impl HitRecord {
 
     pub fn does_hit(&self) -> bool {
         self.hit.is_some()
+    }
+
+    // for decoration
+    pub fn get_hit_mut(&mut self) -> &mut Hit {
+        self.hit.as_mut().unwrap()
+    }
+
+    // for decoration
+    pub fn get_scatter_mut(&mut self) -> &mut Ray {
+        self.scatter.as_mut().unwrap()
     }
 
     pub fn get_hit(&self) -> &Hit {
@@ -83,18 +92,18 @@ pub trait Hittable: Sync + Send {
     fn aabb(&self) -> AABB;
 }
 
-pub struct Object {
-    pub shape: Box<dyn Shape>,
-    pub material: Box<dyn Material>,
+pub struct Object<S: Shape + Sync + Send, M: Material + Sync + Send> {
+    pub shape: S,
+    pub material: M,
 }
 
-impl Object {
-    pub fn new(shape: Box<dyn Shape>, material: Box<dyn Material>) -> Self {
+impl<S: Shape + Sync + Send, M: Material + Sync + Send> Object<S, M> {
+    pub fn new(shape: S, material: M) -> Self {
         Self { shape, material }
     }
 }
 
-impl Hittable for Object {
+impl<S: Shape + Sync + Send, M: Material + Sync + Send> Hittable for Object<S, M> {
     fn hit(&self, hit_record: &mut HitRecord) -> bool {
         self.shape.hit(hit_record) && {
             self.material.scatter(hit_record);
@@ -107,16 +116,19 @@ impl Hittable for Object {
     }
 }
 
-// a simple wrapper for the BVH tree
+// a simple builder for the BVH tree
+#[derive(Default)]
 pub struct HittableList {
-    bvh_node: BVHNode,
+    hittable_list: Vec<Box<dyn Hittable>>,
 }
 
 impl HittableList {
-    pub fn new(hittable_list: Vec<Box<dyn Hittable>>) -> Self {
-        Self {
-            bvh_node: BVHNode::new(hittable_list),
-        }
+    pub fn push<T: Hittable + 'static>(&mut self, hittable: T) {
+        self.hittable_list.push(Box::new(hittable));
+    }
+
+    pub fn build(self) -> BVHNode {
+        BVHNode::new(self.hittable_list)
     }
 }
 
@@ -130,15 +142,5 @@ impl Hittable for Empty {
 
     fn aabb(&self) -> AABB {
         AABB::default()
-    }
-}
-
-impl Hittable for HittableList {
-    fn hit(&self, hit_record: &mut HitRecord) -> bool {
-        self.bvh_node.hit(hit_record)
-    }
-
-    fn aabb(&self) -> AABB {
-        self.bvh_node.aabb()
     }
 }

@@ -1,8 +1,6 @@
 use image::Rgb;
 use rand::Rng;
 
-use crate::interval::Interval;
-
 #[derive(Debug, Clone, Copy)]
 pub struct Color {
     pub r: f64,
@@ -46,6 +44,12 @@ impl Color {
         Self::new(r, g, b)
     }
 
+    pub fn blend_assign(&mut self, other: Color, mode: BlendMode) {
+        self.r = mode.apply(self.r, other.r);
+        self.g = mode.apply(self.g, other.g);
+        self.b = mode.apply(self.b, other.b);
+    }
+
     pub fn lighten(self, factor: f64) -> Color {
         Self::new(self.r * factor, self.g * factor, self.b * factor)
     }
@@ -58,16 +62,8 @@ impl Color {
         }
     }
 
-    fn r_gamma(&self) -> f64 {
-        Self::linear_to_gamma(self.r)
-    }
-
-    fn g_gamma(&self) -> f64 {
-        Self::linear_to_gamma(self.g)
-    }
-
-    fn b_gamma(&self) -> f64 {
-        Self::linear_to_gamma(self.b)
+    fn gamma_to_linear(gamma_component: f64) -> f64 {
+        gamma_component * gamma_component
     }
 
     pub fn is_black(&self) -> bool {
@@ -86,10 +82,21 @@ impl Color {
 }
 
 impl From<Color> for Rgb<u8> {
+    // Convert Color to Rgb<u8> by gamma-correcting the color components.
+    // Note that the color components should be in the range [0, 1]
     fn from(color: Color) -> Self {
-        let r_byte = (Interval::UNIT.clamp(color.r_gamma()) * 256.0) as u8;
-        let g_byte = (Interval::UNIT.clamp(color.g_gamma()) * 256.0) as u8;
-        let b_byte = (Interval::UNIT.clamp(color.b_gamma()) * 256.0) as u8;
+        let r_byte = (Color::linear_to_gamma(color.r) * 256.0) as u8;
+        let g_byte = (Color::linear_to_gamma(color.g) * 256.0) as u8;
+        let b_byte = (Color::linear_to_gamma(color.b) * 256.0) as u8;
         Rgb([r_byte, g_byte, b_byte])
+    }
+}
+
+impl From<Rgb<u8>> for Color {
+    fn from(val: Rgb<u8>) -> Self {
+        let r = Color::gamma_to_linear(val.0[0] as f64 / 256.0);
+        let g = Color::gamma_to_linear(val.0[1] as f64 / 256.0);
+        let b = Color::gamma_to_linear(val.0[2] as f64 / 256.0);
+        Color::new(r, g, b)
     }
 }

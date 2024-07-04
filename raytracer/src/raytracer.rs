@@ -1,23 +1,24 @@
 use std::sync::Arc;
 use std::thread;
 
+use crate::bvh::BVHNode;
 use indicatif::ProgressBar;
 
 use crate::camera::Camera;
 use crate::canvas::Canvas;
 use crate::color::{BlendMode, Color};
-use crate::hittable::{HitRecord, Hittable, HittableList};
+use crate::hittable::{HitRecord, Hittable};
 use crate::ray::Ray;
 
 pub struct RayTracer {
     camera: Camera,
     canvas: Canvas,
-    world: Arc<HittableList>, // Arc is used to share the world between threads
+    world: Arc<BVHNode>, // Arc is used to share the world between threads
     max_depth: u32,
 }
 
 impl RayTracer {
-    pub fn new(camera: Camera, canvas: Canvas, world: HittableList, max_depth: u32) -> Self {
+    pub fn new(camera: Camera, canvas: Canvas, world: BVHNode, max_depth: u32) -> Self {
         Self {
             camera,
             canvas,
@@ -26,7 +27,7 @@ impl RayTracer {
         }
     }
 
-    fn raytrace(world: &Arc<HittableList>, ray: Ray, left_depth: u32) -> Color {
+    fn raytrace(world: &Arc<BVHNode>, ray: Ray, left_depth: u32) -> Color {
         if left_depth == 0 || ray.color.is_black() {
             return Color::new(0.0, 0.0, 0.0);
         }
@@ -45,7 +46,7 @@ impl RayTracer {
     fn render_task(
         input: Vec<Ray>,
         progress_bar: Arc<ProgressBar>,
-        world: Arc<HittableList>,
+        world: Arc<BVHNode>,
         max_depth: u32,
     ) -> Vec<Color> {
         let ret = input
@@ -90,7 +91,7 @@ impl RayTracer {
         threads.into_iter().for_each(|thread| {
             let thread_result = thread.join().unwrap();
             for i in 0..image_size {
-                result[i] = result[i].blend(thread_result[i], BlendMode::Add);
+                result[i].blend_assign(thread_result[i], BlendMode::Add);
             }
         });
         progress.finish();

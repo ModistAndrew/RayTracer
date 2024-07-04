@@ -1,3 +1,5 @@
+use std::ops;
+
 #[derive(Debug, Clone, Copy)]
 pub struct Interval {
     pub min: f64,
@@ -67,8 +69,20 @@ impl Interval {
     pub fn union(self, other: Self) -> Self {
         Interval::new(self.min.min(other.min), self.max.max(other.max))
     }
+}
 
-    pub fn moved(self, x: f64) -> Self {
-        Interval::new(self.min + x, self.max + x)
+impl ops::Add<f64> for Interval {
+    type Output = Interval;
+
+    fn add(self, t: f64) -> Interval {
+        Interval::new(self.min + t, self.max + t)
+    }
+}
+
+impl ops::Sub<f64> for Interval {
+    type Output = Interval;
+
+    fn sub(self, t: f64) -> Interval {
+        Interval::new(self.min - t, self.max - t)
     }
 }

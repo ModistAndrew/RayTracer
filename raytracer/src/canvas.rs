@@ -4,16 +4,36 @@ use std::fs;
 use std::path::PathBuf;
 
 use crate::color::Color;
+use crate::texture::UV;
 
 pub struct Canvas {
     image: RgbImage,
 }
 
 impl Canvas {
-    pub fn new(width: u32, height: u32) -> Self {
+    pub fn from_path(path: &str) -> Self {
+        let image = image::open(path)
+            .expect("Cannot open the image file")
+            .to_rgb8();
+        Self { image }
+    }
+
+    pub fn empty(width: u32, height: u32) -> Self {
         Self {
             image: ImageBuffer::new(width, height),
         }
+    }
+
+    pub fn read(&self, x: u32, y: u32) -> Color {
+        let pixel = self.image.get_pixel(x, y);
+        (*pixel).into()
+    }
+
+    pub fn read_uv(&self, uv: UV) -> Color {
+        self.read(
+            (uv.u * self.width() as f64) as u32,
+            (uv.v * self.height() as f64) as u32,
+        )
     }
 
     pub fn write(&mut self, x: u32, y: u32, color: Color) {

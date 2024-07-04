@@ -54,10 +54,10 @@ impl Camera {
 
         let pixel_width_ratio = 1.0 / canvas_param.image_width as f64;
         let pixel_height_ratio = 1.0 / canvas_param.image_height as f64;
-        let viewport_u = viewport_width * u;
-        let viewport_v = viewport_height * -v;
+        let viewport_u = u * viewport_width;
+        let viewport_v = -v * viewport_height;
         let viewport_upper_left = perspective_param.look_from
-            - lens_param.focus_dist * w
+            - w * lens_param.focus_dist
             - viewport_u / 2.0
             - viewport_v / 2.0;
 
@@ -88,7 +88,7 @@ impl Camera {
 
     fn defocus_disk_sample(&self) -> Vec3 {
         let p = Vec3::random_in_unit_disk();
-        self.origin + (p.x * self.defocus_disk_u) + (p.y * self.defocus_disk_v)
+        self.origin + (self.defocus_disk_u * p.x) + (self.defocus_disk_v * p.y)
     }
 
     pub fn get_ray_at(&self, i: u32, j: u32) -> Ray {

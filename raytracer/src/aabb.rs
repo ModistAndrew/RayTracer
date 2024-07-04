@@ -37,14 +37,6 @@ impl AABB {
         true
     }
 
-    pub fn moved(self, direction: Vec3) -> Self {
-        AABB::new(
-            self.x.moved(direction.x),
-            self.y.moved(direction.y),
-            self.z.moved(direction.z),
-        )
-    }
-
     pub fn union(self, other: Self) -> Self {
         AABB::new(
             self.x.union(other.x),
@@ -65,6 +57,22 @@ impl AABB {
         } else {
             2
         }
+    }
+}
+
+impl ops::Add<Vec3> for AABB {
+    type Output = Self;
+
+    fn add(self, rhs: Vec3) -> Self::Output {
+        AABB::new(self.x + rhs.x, self.y + rhs.y, self.z + rhs.z)
+    }
+}
+
+impl ops::Sub<Vec3> for AABB {
+    type Output = Self;
+
+    fn sub(self, rhs: Vec3) -> Self::Output {
+        AABB::new(self.x - rhs.x, self.y - rhs.y, self.z - rhs.z)
     }
 }
 
