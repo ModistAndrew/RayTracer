@@ -1,7 +1,7 @@
 use crate::vec3::Vec3;
 use rand::Rng;
 pub struct Perlin {
-    random_data: [f64; Perlin::POINT_COUNT],
+    random_data: [Vec3; Perlin::POINT_COUNT],
     perm_x: [usize; Perlin::POINT_COUNT],
     perm_y: [usize; Perlin::POINT_COUNT],
     perm_z: [usize; Perlin::POINT_COUNT],
@@ -9,10 +9,9 @@ pub struct Perlin {
 
 impl Default for Perlin {
     fn default() -> Self {
-        let mut random_data = [0.0; Self::POINT_COUNT];
-        let mut rng = rand::thread_rng();
+        let mut random_data = [Vec3::default(); Self::POINT_COUNT];
         for i in random_data.iter_mut() {
-            *i = rng.gen();
+            *i = Vec3::random_in_cube().normalize();
         }
         Self {
             random_data,
@@ -30,13 +29,10 @@ impl Perlin {
         let u = p.x - p.x.floor();
         let v = p.y - p.y.floor();
         let w = p.z - p.z.floor();
-        let u = u * u * (3.0 - 2.0 * u);
-        let v = v * v * (3.0 - 2.0 * v);
-        let w = w * w * (3.0 - 2.0 * w);
         let i = p.x.floor() as i32;
         let j = p.y.floor() as i32;
         let k = p.z.floor() as i32;
-        let mut c = [0.0; 8];
+        let mut c = [Vec3::default(); 8];
         for di in 0..2 {
             for dj in 0..2 {
                 for dk in 0..2 {
@@ -68,15 +64,19 @@ impl Perlin {
         }
     }
 
-    fn trilinear_interpolation(c: [f64; 8], u: f64, v: f64, w: f64) -> f64 {
+    fn trilinear_interpolation(c: [Vec3; 8], u: f64, v: f64, w: f64) -> f64 {
+        let uu = u * u * (3.0 - 2.0 * u);
+        let vv = v * v * (3.0 - 2.0 * v);
+        let ww = w * w * (3.0 - 2.0 * w);
         let mut accum = 0.0;
         for i in 0..2 {
             for j in 0..2 {
                 for k in 0..2 {
-                    accum += (i as f64 * u + (1 - i) as f64 * (1.0 - u))
-                        * (j as f64 * v + (1 - j) as f64 * (1.0 - v))
-                        * (k as f64 * w + (1 - k) as f64 * (1.0 - w))
-                        * c[i * 4 + j * 2 + k];
+                    let weight_vec = Vec3::new(u - i as f64, v - j as f64, w - k as f64);
+                    accum += (i as f64 * uu + (1 - i) as f64 * (1.0 - uu))
+                        * (j as f64 * vv + (1 - j) as f64 * (1.0 - vv))
+                        * (k as f64 * ww + (1 - k) as f64 * (1.0 - ww))
+                        * c[i * 4 + j * 2 + k].dot(weight_vec)
                 }
             }
         }
