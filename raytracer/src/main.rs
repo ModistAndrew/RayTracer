@@ -256,7 +256,7 @@ fn perlin_spheres() {
     );
     let picture = raytracer::canvas::Canvas::empty(image_width, image_height);
     let raytracer = RayTracer::new(camera, picture, hittable_list.build(), 50);
-    raytracer.render().save("output/book2/image9.png");
+    raytracer.render().save("output/book2/image10.png");
 }
 
 fn main() {
