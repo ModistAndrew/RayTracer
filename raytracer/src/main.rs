@@ -70,6 +70,17 @@ fn create_lambertian_checker(
     )
 }
 
+fn create_lambertian_texture(
+    center: Vec3,
+    radius: f64,
+    texture: &str,
+) -> Object<Sphere, ImageTexture<Lambertian>> {
+    Object::new(
+        Sphere::new(center, radius),
+        ImageTexture::new(texture, Lambertian),
+    )
+}
+
 fn bouncing_spheres() {
     let mut hittable_list = HittableList::default();
     hittable_list.push(create_lambertian_checker(
@@ -119,13 +130,8 @@ fn bouncing_spheres() {
         0.0,
     ));
 
-    let aspect_ratio = 16.0 / 9.0;
     let image_width = 1200;
-    let mut image_height = (image_width as f64 / aspect_ratio) as u32;
-    if image_height < 1 {
-        image_height = 1;
-    }
-
+    let image_height = 675;
     let camera = Camera::new(
         PerspectiveParam {
             look_from: Vec3::new(13.0, 2.0, 3.0),
@@ -146,8 +152,9 @@ fn bouncing_spheres() {
     );
     let picture = raytracer::canvas::Canvas::empty(image_width, image_height);
     let mut raytracer = RayTracer::new(camera, picture, hittable_list.build(), 50);
+
     raytracer.render(true);
-    raytracer.save("output/book1/image25.png");
+    raytracer.save("output/book2/image2.png");
 }
 
 fn checkered_spheres() {
@@ -155,13 +162,8 @@ fn checkered_spheres() {
     hittable_list.push(create_lambertian_checker(Vec3::new(0.0, -10.0, 0.0), 10.0));
     hittable_list.push(create_lambertian_checker(Vec3::new(0.0, 10.0, 0.0), 10.0));
 
-    let aspect_ratio = 16.0 / 9.0;
     let image_width = 400;
-    let mut image_height = (image_width as f64 / aspect_ratio) as u32;
-    if image_height < 1 {
-        image_height = 1;
-    }
-
+    let image_height = 225;
     let camera = Camera::new(
         PerspectiveParam {
             look_from: Vec3::new(13.0, 2.0, 3.0),
@@ -182,24 +184,21 @@ fn checkered_spheres() {
     );
     let picture = raytracer::canvas::Canvas::empty(image_width, image_height);
     let mut raytracer = RayTracer::new(camera, picture, hittable_list.build(), 50);
+
     raytracer.render(true);
-    raytracer.save("output/book1/image26.png");
+    raytracer.save("output/book2/image3.png");
 }
 
 fn earth() {
     let mut hittable_list = HittableList::default();
-    hittable_list.push(Object::new(
-        Sphere::new(Vec3::new(0.0, 0.0, 0.0), 2.0),
-        ImageTexture::new("data/earthmap.jpg", Lambertian),
+    hittable_list.push(create_lambertian_texture(
+        Vec3::new(0.0, 0.0, 0.0),
+        2.0,
+        "assets/earth_map.jpg",
     ));
 
-    let aspect_ratio = 16.0 / 9.0;
     let image_width = 400;
-    let mut image_height = (image_width as f64 / aspect_ratio) as u32;
-    if image_height < 1 {
-        image_height = 1;
-    }
-
+    let image_height = 225;
     let camera = Camera::new(
         PerspectiveParam {
             look_from: Vec3::new(0.0, 0.0, 12.0),
@@ -220,12 +219,13 @@ fn earth() {
     );
     let picture = raytracer::canvas::Canvas::empty(image_width, image_height);
     let mut raytracer = RayTracer::new(camera, picture, hittable_list.build(), 50);
+
     raytracer.render(true);
-    raytracer.save("output/book1/image27.png");
+    raytracer.save("output/book2/image5.png");
 }
 
 fn main() {
-    let x = 3;
+    let x = 1;
     match x {
         1 => bouncing_spheres(),
         2 => checkered_spheres(),
