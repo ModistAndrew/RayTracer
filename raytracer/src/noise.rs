@@ -1,13 +1,13 @@
 use crate::vec3::Vec3;
 use rand::Rng;
-pub struct Perlin {
-    random_data: [Vec3; Perlin::POINT_COUNT],
-    perm_x: [usize; Perlin::POINT_COUNT],
-    perm_y: [usize; Perlin::POINT_COUNT],
-    perm_z: [usize; Perlin::POINT_COUNT],
+pub struct Noise {
+    random_data: [Vec3; Noise::POINT_COUNT],
+    perm_x: [usize; Noise::POINT_COUNT],
+    perm_y: [usize; Noise::POINT_COUNT],
+    perm_z: [usize; Noise::POINT_COUNT],
 }
 
-impl Default for Perlin {
+impl Default for Noise {
     fn default() -> Self {
         let mut random_data = [Vec3::default(); Self::POINT_COUNT];
         for i in random_data.iter_mut() {
@@ -22,7 +22,7 @@ impl Default for Perlin {
     }
 }
 
-impl Perlin {
+impl Noise {
     const POINT_COUNT: usize = 256;
 
     pub fn noise(&self, p: Vec3) -> f64 {
@@ -47,7 +47,7 @@ impl Perlin {
         Self::trilinear_interpolation(c, u, v, w)
     }
 
-    pub fn turb(&self, p: Vec3, depth: i32) -> f64 {
+    pub fn turbulence(&self, p: Vec3, depth: i32) -> f64 {
         let mut accum = 0.0;
         let mut temp_p = p;
         let mut weight = 1.0;
@@ -59,7 +59,7 @@ impl Perlin {
         accum.abs()
     }
 
-    fn generate_perm() -> [usize; Perlin::POINT_COUNT] {
+    fn generate_perm() -> [usize; Noise::POINT_COUNT] {
         let mut perm = [0; Self::POINT_COUNT];
         for (i, item) in perm.iter_mut().enumerate() {
             *item = i;

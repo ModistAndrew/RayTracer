@@ -2,7 +2,7 @@ use crate::canvas::Canvas;
 use crate::color::{BlendMode, Color};
 use crate::hittable::HitRecord;
 use crate::material::Material;
-use crate::perlin::Perlin;
+use crate::noise::Noise;
 
 #[derive(Clone, Copy, Default)]
 pub struct UV {
@@ -115,15 +115,15 @@ impl<T: Material> Texture for ImageTexture<T> {
 }
 
 pub struct NoiseTexture<T: Material> {
-    perlin: Perlin,
+    noise: Noise,
     scale: f64,
     inner: T,
 }
 
 impl<T: Material> NoiseTexture<T> {
-    pub fn new(perlin: Perlin, scale: f64, inner: T) -> Self {
+    pub fn new(noise: Noise, scale: f64, inner: T) -> Self {
         Self {
-            perlin,
+            noise,
             scale,
             inner,
         }
@@ -134,7 +134,8 @@ impl<T: Material> Texture for NoiseTexture<T> {
     type Inner = T;
     fn value(&self, hit_record: &HitRecord) -> Color {
         let p = hit_record.get_hit().position;
-        Color::WHITE.lighten(self.perlin.turb(p * self.scale, 7))
+        Color::WHITE
+            .lighten(0.5 * (1.0 + (self.scale * p.z + 10.0 * self.noise.turbulence(p, 7)).sin()))
     }
     fn get_inner(&self) -> &T {
         &self.inner

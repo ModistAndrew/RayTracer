@@ -4,7 +4,7 @@ use raytracer::camera::{Camera, ImageParam, LensParam, PerspectiveParam};
 use raytracer::color::{BlendMode, Color};
 use raytracer::hittable::{HittableList, Object};
 use raytracer::material::{Dielectric, Lambertian, Metal};
-use raytracer::perlin::Perlin;
+use raytracer::noise::Noise;
 use raytracer::raytracer::RayTracer;
 use raytracer::shape::{Moving, Sphere};
 use raytracer::texture::{CheckerTexture, ImageTexture, NoiseTexture, SolidColor};
@@ -85,7 +85,7 @@ fn create_lambertian_texture(
 fn create_lambertian_noise(center: Vec3, radius: f64) -> Object<Sphere, NoiseTexture<Lambertian>> {
     Object::new(
         Sphere::new(center, radius),
-        NoiseTexture::new(Perlin::default(), 1.0, Lambertian),
+        NoiseTexture::new(Noise::default(), 4.0, Lambertian),
     )
 }
 
@@ -226,7 +226,7 @@ fn earth() {
     raytracer.render().save("output/book2/image5.png");
 }
 
-fn perlin_spheres() {
+fn noise_spheres() {
     let mut hittable_list = HittableList::default();
     hittable_list.push(create_lambertian_noise(
         Vec3::new(0.0, -1000.0, 0.0),
@@ -256,7 +256,7 @@ fn perlin_spheres() {
     );
     let picture = raytracer::canvas::Canvas::empty(image_width, image_height);
     let raytracer = RayTracer::new(camera, picture, hittable_list.build(), 50);
-    raytracer.render().save("output/book2/image14.png");
+    raytracer.render().save("output/book2/image15.png");
 }
 
 fn main() {
@@ -265,7 +265,7 @@ fn main() {
         1 => bouncing_spheres(),
         2 => checkered_spheres(),
         3 => earth(),
-        4 => perlin_spheres(),
+        4 => noise_spheres(),
         _ => {}
     }
 }
