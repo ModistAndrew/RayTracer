@@ -4,9 +4,10 @@ use raytracer::camera::{Camera, ImageParam, LensParam, PerspectiveParam};
 use raytracer::color::{BlendMode, Color};
 use raytracer::hittable::{HittableList, Object};
 use raytracer::material::{Dielectric, Lambertian, Metal};
+use raytracer::perlin::Perlin;
 use raytracer::raytracer::RayTracer;
 use raytracer::shape::{Moving, Sphere};
-use raytracer::texture::{CheckerTexture, ImageTexture, SolidColor};
+use raytracer::texture::{CheckerTexture, ImageTexture, NoiseTexture, SolidColor};
 use raytracer::vec3::Vec3;
 
 fn create_lambertian(
@@ -78,6 +79,13 @@ fn create_lambertian_texture(
     Object::new(
         Sphere::new(center, radius),
         ImageTexture::new(texture, Lambertian),
+    )
+}
+
+fn create_lambertian_noise(center: Vec3, radius: f64) -> Object<Sphere, NoiseTexture<Lambertian>> {
+    Object::new(
+        Sphere::new(center, radius),
+        NoiseTexture::new(Perlin::default(), Lambertian),
     )
 }
 
@@ -218,12 +226,46 @@ fn earth() {
     raytracer.render().save("output/book2/image5.png");
 }
 
+fn perlin_spheres() {
+    let mut hittable_list = HittableList::default();
+    hittable_list.push(create_lambertian_noise(
+        Vec3::new(0.0, -1000.0, 0.0),
+        1000.0,
+    ));
+    hittable_list.push(create_lambertian_noise(Vec3::new(0.0, 2.0, 0.0), 2.0));
+
+    let image_width = 400;
+    let image_height = 225;
+    let camera = Camera::new(
+        PerspectiveParam {
+            look_from: Vec3::new(13.0, 2.0, 3.0),
+            look_at: Vec3::new(0.0, 0.0, 0.0),
+            view_up: Vec3::new(0.0, 1.0, 0.0),
+        },
+        LensParam {
+            fov: 20.0,
+            filter: Color::WHITE,
+            defocus_angle: 0.0,
+            focus_dist: 10.0,
+        },
+        ImageParam {
+            image_width,
+            image_height,
+            sample_per_pixel: 100,
+        },
+    );
+    let picture = raytracer::canvas::Canvas::empty(image_width, image_height);
+    let raytracer = RayTracer::new(camera, picture, hittable_list.build(), 50);
+    raytracer.render().save("output/book2/image9.png");
+}
+
 fn main() {
-    let x = 3;
+    let x = 4;
     match x {
         1 => bouncing_spheres(),
         2 => checkered_spheres(),
         3 => earth(),
+        4 => perlin_spheres(),
         _ => {}
     }
 }

@@ -3,7 +3,7 @@ use crate::ray::Ray;
 use crate::vec3::Vec3;
 use std::ops;
 
-#[derive(Debug, Clone, Copy, Default)]
+#[derive(Clone, Copy, Default)]
 pub struct AABB {
     x: Interval,
     y: Interval,

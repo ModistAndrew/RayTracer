@@ -1,7 +1,7 @@
 use image::Rgb;
 use rand::Rng;
 
-#[derive(Debug, Clone, Copy)]
+#[derive(Clone, Copy)]
 pub struct Color {
     pub r: f64,
     pub g: f64,

@@ -11,6 +11,11 @@ pub struct Canvas {
 }
 
 impl Canvas {
+    pub fn init(width: u32, height: u32) -> Self {
+        Self {
+            image: ImageBuffer::new(width, height),
+        }
+    }
     pub fn from_path(path: &str) -> Self {
         let image = image::open(path)
             .expect("Cannot open the image file")
