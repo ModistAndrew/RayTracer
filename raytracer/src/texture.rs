@@ -116,12 +116,17 @@ impl<T: Material> Texture for ImageTexture<T> {
 
 pub struct NoiseTexture<T: Material> {
     perlin: Perlin,
+    scale: f64,
     inner: T,
 }
 
 impl<T: Material> NoiseTexture<T> {
-    pub fn new(perlin: Perlin, inner: T) -> Self {
-        Self { perlin, inner }
+    pub fn new(perlin: Perlin, scale: f64, inner: T) -> Self {
+        Self {
+            perlin,
+            scale,
+            inner,
+        }
     }
 }
 
@@ -129,7 +134,7 @@ impl<T: Material> Texture for NoiseTexture<T> {
     type Inner = T;
     fn value(&self, hit_record: &HitRecord) -> Color {
         let p = hit_record.get_hit().position;
-        Color::WHITE.lighten(self.perlin.noise(p))
+        Color::WHITE.lighten(self.perlin.noise(p * self.scale))
     }
     fn get_inner(&self) -> &T {
         &self.inner
