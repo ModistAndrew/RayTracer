@@ -1,4 +1,4 @@
-use std::ops;
+use std::ops::{Add, Sub};
 
 #[derive(Clone, Copy)]
 pub struct Interval {
@@ -71,7 +71,7 @@ impl Interval {
     }
 }
 
-impl ops::Add<f64> for Interval {
+impl Add<f64> for Interval {
     type Output = Interval;
 
     fn add(self, t: f64) -> Interval {
@@ -79,7 +79,7 @@ impl ops::Add<f64> for Interval {
     }
 }
 
-impl ops::Sub<f64> for Interval {
+impl Sub<f64> for Interval {
     type Output = Interval;
 
     fn sub(self, t: f64) -> Interval {

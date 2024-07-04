@@ -1,7 +1,7 @@
 use crate::interval::Interval;
 use crate::ray::Ray;
 use crate::vec3::Vec3;
-use std::ops;
+use std::ops::{Add, Index, Sub};
 
 #[derive(Clone, Copy, Default)]
 pub struct AABB {
@@ -60,7 +60,7 @@ impl AABB {
     }
 }
 
-impl ops::Add<Vec3> for AABB {
+impl Add<Vec3> for AABB {
     type Output = Self;
 
     fn add(self, rhs: Vec3) -> Self::Output {
@@ -68,7 +68,7 @@ impl ops::Add<Vec3> for AABB {
     }
 }
 
-impl ops::Sub<Vec3> for AABB {
+impl Sub<Vec3> for AABB {
     type Output = Self;
 
     fn sub(self, rhs: Vec3) -> Self::Output {
@@ -76,7 +76,7 @@ impl ops::Sub<Vec3> for AABB {
     }
 }
 
-impl ops::Index<usize> for AABB {
+impl Index<usize> for AABB {
     type Output = Interval;
 
     fn index(&self, index: usize) -> &Self::Output {

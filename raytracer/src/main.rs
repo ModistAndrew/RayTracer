@@ -85,7 +85,7 @@ fn create_lambertian_texture(
 fn create_lambertian_noise(center: Vec3, radius: f64) -> Object<Sphere, NoiseTexture<Lambertian>> {
     Object::new(
         Sphere::new(center, radius),
-        NoiseTexture::new(Perlin::default(), 4.0, Lambertian),
+        NoiseTexture::new(Perlin::default(), 1.0, Lambertian),
     )
 }
 
@@ -256,7 +256,7 @@ fn perlin_spheres() {
     );
     let picture = raytracer::canvas::Canvas::empty(image_width, image_height);
     let raytracer = RayTracer::new(camera, picture, hittable_list.build(), 50);
-    raytracer.render().save("output/book2/image13.png");
+    raytracer.render().save("output/book2/image14.png");
 }
 
 fn main() {

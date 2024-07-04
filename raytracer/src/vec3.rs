@@ -1,6 +1,5 @@
 use rand::Rng;
-use std::ops;
-use std::ops::{AddAssign, SubAssign};
+use std::ops::{Add, AddAssign, Div, DivAssign, Index, Mul, MulAssign, Neg, Sub, SubAssign};
 
 #[derive(Clone, Copy, Default)]
 pub struct Vec3 {
@@ -82,7 +81,7 @@ impl Vec3 {
     }
 }
 
-impl ops::Neg for Vec3 {
+impl Neg for Vec3 {
     type Output = Vec3;
 
     fn neg(self) -> Vec3 {
@@ -90,7 +89,7 @@ impl ops::Neg for Vec3 {
     }
 }
 
-impl ops::Add for Vec3 {
+impl Add for Vec3 {
     type Output = Vec3;
 
     fn add(self, other: Vec3) -> Vec3 {
@@ -98,7 +97,7 @@ impl ops::Add for Vec3 {
     }
 }
 
-impl ops::Sub for Vec3 {
+impl Sub for Vec3 {
     type Output = Vec3;
 
     fn sub(self, other: Vec3) -> Vec3 {
@@ -106,7 +105,7 @@ impl ops::Sub for Vec3 {
     }
 }
 
-impl ops::Mul<f64> for Vec3 {
+impl Mul<f64> for Vec3 {
     type Output = Vec3;
 
     fn mul(self, t: f64) -> Vec3 {
@@ -114,7 +113,7 @@ impl ops::Mul<f64> for Vec3 {
     }
 }
 
-impl ops::Mul for Vec3 {
+impl Mul for Vec3 {
     type Output = Vec3;
 
     fn mul(self, other: Vec3) -> Vec3 {
@@ -126,7 +125,7 @@ impl ops::Mul for Vec3 {
     }
 }
 
-impl ops::Div<f64> for Vec3 {
+impl Div<f64> for Vec3 {
     type Output = Vec3;
 
     fn div(self, t: f64) -> Vec3 {
@@ -150,7 +149,23 @@ impl SubAssign for Vec3 {
     }
 }
 
-impl ops::Index<usize> for Vec3 {
+impl MulAssign<f64> for Vec3 {
+    fn mul_assign(&mut self, rhs: f64) {
+        self.x *= rhs;
+        self.y *= rhs;
+        self.z *= rhs;
+    }
+}
+
+impl DivAssign<f64> for Vec3 {
+    fn div_assign(&mut self, rhs: f64) {
+        self.x /= rhs;
+        self.y /= rhs;
+        self.z /= rhs;
+    }
+}
+
+impl Index<usize> for Vec3 {
     type Output = f64;
 
     fn index(&self, i: usize) -> &f64 {

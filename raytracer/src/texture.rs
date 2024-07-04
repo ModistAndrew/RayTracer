@@ -134,7 +134,7 @@ impl<T: Material> Texture for NoiseTexture<T> {
     type Inner = T;
     fn value(&self, hit_record: &HitRecord) -> Color {
         let p = hit_record.get_hit().position;
-        Color::WHITE.lighten(0.5 * (1.0 + self.perlin.noise(p * self.scale)))
+        Color::WHITE.lighten(self.perlin.turb(p * self.scale, 7))
     }
     fn get_inner(&self) -> &T {
         &self.inner

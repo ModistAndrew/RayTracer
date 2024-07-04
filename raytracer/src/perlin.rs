@@ -47,6 +47,18 @@ impl Perlin {
         Self::trilinear_interpolation(c, u, v, w)
     }
 
+    pub fn turb(&self, p: Vec3, depth: i32) -> f64 {
+        let mut accum = 0.0;
+        let mut temp_p = p;
+        let mut weight = 1.0;
+        for _ in 0..depth {
+            accum += weight * self.noise(temp_p);
+            weight *= 0.5;
+            temp_p *= 2.0;
+        }
+        accum.abs()
+    }
+
     fn generate_perm() -> [usize; Perlin::POINT_COUNT] {
         let mut perm = [0; Self::POINT_COUNT];
         for (i, item) in perm.iter_mut().enumerate() {
