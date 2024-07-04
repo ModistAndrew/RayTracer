@@ -32,7 +32,7 @@ impl Canvas {
     pub fn read_uv(&self, uv: UV) -> Color {
         self.read(
             (uv.u * self.width() as f64) as u32,
-            (uv.v * self.height() as f64) as u32,
+            ((1.0 - uv.v) * self.height() as f64) as u32, // flip y axis
         )
     }
 

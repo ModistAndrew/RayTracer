@@ -2,6 +2,7 @@ use crate::aabb::AABB;
 use crate::hittable::HitRecord;
 use crate::texture::UV;
 use crate::vec3::Vec3;
+use std::f64::consts::PI;
 
 pub trait Shape {
     // hit_record.ray is the original ray. may contain the former hit record.
@@ -19,6 +20,12 @@ pub struct Sphere {
 impl Sphere {
     pub fn new(center: Vec3, radius: f64) -> Self {
         Self { center, radius }
+    }
+
+    fn uv(p: Vec3) -> UV {
+        let theta = (-p.y).acos();
+        let phi = (-p.z).atan2(p.x) + PI;
+        UV::new(phi / (2.0 * PI), theta / PI)
     }
 }
 
@@ -43,7 +50,7 @@ impl Shape for Sphere {
             }
         }
         let outward_normal = (ray.at(root) - self.center) / self.radius;
-        hit_record.set_hit(root, outward_normal, UV::new(0.0, 0.0));
+        hit_record.set_hit(root, outward_normal, Self::uv(outward_normal));
         true
     }
 

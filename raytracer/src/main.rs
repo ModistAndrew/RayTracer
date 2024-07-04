@@ -219,7 +219,7 @@ fn earth() {
 }
 
 fn main() {
-    let x = 1;
+    let x = 3;
     match x {
         1 => bouncing_spheres(),
         2 => checkered_spheres(),
