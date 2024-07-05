@@ -9,7 +9,6 @@ use crate::texture::UV;
 use crate::vec3::Vec3;
 
 pub struct Hit {
-    pub t: f64,
     pub position: Vec3,   // the hit position
     pub normal: Vec3,     // always normalized and points opposite to the ray
     pub front_face: bool, // whether outside the object
@@ -38,16 +37,14 @@ impl HitRecord {
         }
     }
 
-    pub fn set_hit(&mut self, t: f64, outward_normal: Vec3, uv: UV) {
+    pub fn set_hit(&mut self, t: f64, position: Vec3, outward_normal: Vec3, uv: UV) {
         let front_face = self.ray.direction.dot(outward_normal) < 0.0;
         let normal = if front_face {
             outward_normal
         } else {
             -outward_normal
         };
-        let position = self.ray.at(t);
         self.hit = Some(Hit {
-            t,
             position,
             normal,
             front_face,

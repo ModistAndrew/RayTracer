@@ -45,6 +45,10 @@ impl AABB {
         )
     }
 
+    pub fn contains(&self, v: Vec3) -> bool {
+        self.x.contains(v.x) && self.y.contains(v.y) && self.z.contains(v.z)
+    }
+
     pub fn longest_axis(&self) -> usize {
         if self.x.size() > self.y.size() {
             if self.x.size() > self.z.size() {

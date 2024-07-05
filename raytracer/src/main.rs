@@ -6,7 +6,7 @@ use raytracer::hittable::{HittableList, Object};
 use raytracer::material::{Dielectric, Lambertian, Metal};
 use raytracer::noise::Noise;
 use raytracer::raytracer::RayTracer;
-use raytracer::shape::{Moving, Quad, Sphere};
+use raytracer::shape::{Cube, Moving, Quad, Sphere};
 use raytracer::texture::{
     CheckerTexture, Emissive, ImageTexture, NoiseTexture, SolidColor, TexturedMaterial,
 };
@@ -121,6 +121,17 @@ fn create_sphere_light(
     Object::new(
         Sphere::new(center, radius),
         Emissive::new(SolidColor::new(light)),
+    )
+}
+
+fn create_cube(
+    a: Vec3,
+    b: Vec3,
+    albedo: Color,
+) -> Object<Cube, TexturedMaterial<SolidColor, Lambertian>> {
+    Object::new(
+        Cube::new(a, b),
+        TexturedMaterial::new(SolidColor::new(albedo), Lambertian),
     )
 }
 
@@ -458,6 +469,16 @@ fn cornell_box() {
         Vec3::new(0.0, 555.0, 0.0),
         Color::new(0.73, 0.73, 0.73),
     ));
+    hittable_list.push(create_cube(
+        Vec3::new(130.0, 0.0, 65.0),
+        Vec3::new(295.0, 165.0, 230.0),
+        Color::new(0.73, 0.73, 0.73),
+    ));
+    hittable_list.push(create_cube(
+        Vec3::new(265.0, 0.0, 295.0),
+        Vec3::new(430.0, 330.0, 460.0),
+        Color::new(0.73, 0.73, 0.73),
+    ));
 
     let image_width = 600;
     let image_height = 600;
@@ -480,7 +501,7 @@ fn cornell_box() {
     );
     let picture = raytracer::canvas::Canvas::empty(image_width, image_height);
     let raytracer = RayTracer::new(camera, picture, hittable_list.build(), 50, Color::BLACK);
-    raytracer.render().save("output/book2/image19.png");
+    raytracer.render().save("output/book2/image20.png");
 }
 
 fn main() {

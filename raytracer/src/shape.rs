@@ -50,8 +50,9 @@ impl Shape for Sphere {
                 return false;
             }
         }
-        let outward_normal = (ray.at(root) - self.center) / self.radius;
-        hit_record.set_hit(root, outward_normal, Self::uv(outward_normal));
+        let position = ray.at(root);
+        let outward_normal = (position - self.center) / self.radius;
+        hit_record.set_hit(root, position, outward_normal, Self::uv(outward_normal));
         true
     }
 
@@ -96,11 +97,11 @@ impl Shape for Quad {
             return false;
         }
         let intersection = ray.at(t);
-        let hit_point = intersection - self.q;
-        let alpha = self.w.dot(hit_point * self.v);
-        let beta = self.w.dot(self.u * hit_point);
+        let planar_hit_point = intersection - self.q;
+        let alpha = self.w.dot(planar_hit_point * self.v);
+        let beta = self.w.dot(self.u * planar_hit_point);
         if Interval::UNIT.contains(alpha) && Interval::UNIT.contains(beta) {
-            hit_record.set_hit(t, self.normal, UV::new(alpha, beta));
+            hit_record.set_hit(t, intersection, self.normal, UV::new(alpha, beta));
             return true;
         }
         false
@@ -111,6 +112,59 @@ impl Shape for Quad {
             AABB::from_vec3(self.q, self.q + self.u + self.v),
             AABB::from_vec3(self.q + self.u, self.q + self.v),
         )
+    }
+}
+
+pub struct Cube {
+    aabb: AABB,
+}
+
+impl Cube {
+    pub fn new(a: Vec3, b: Vec3) -> Self {
+        Self {
+            aabb: AABB::from_vec3(a, b),
+        }
+    }
+}
+
+impl Shape for Cube {
+    fn hit(&self, hit_record: &mut HitRecord) -> bool {
+        let ray = &hit_record.ray;
+        let mut axis_t = f64::NEG_INFINITY;
+        let mut axis = 0;
+        let mut axis_sign = 0;
+        for i in 0..3 {
+            let k = ray.direction[i];
+            if k == 0.0 {
+                continue;
+            }
+            let t_min = (if k > 0.0 {
+                self.aabb[i].min
+            } else {
+                self.aabb[i].max
+            } - ray.origin[i])
+                / k;
+            if t_min > axis_t {
+                axis_t = t_min;
+                axis = i;
+                axis_sign = if k > 0.0 { 1 } else { -1 };
+            }
+        }
+        if !ray.interval.contains(axis_t) {
+            return false;
+        }
+        let hit_point = ray.at(axis_t);
+        if !self.aabb.contains(hit_point) {
+            return false;
+        }
+        let mut outward_normal = Vec3::default();
+        outward_normal[axis] = axis_sign as f64;
+        hit_record.set_hit(axis_t, hit_point, outward_normal, UV::default());
+        true
+    }
+
+    fn aabb(&self) -> AABB {
+        self.aabb
     }
 }
 

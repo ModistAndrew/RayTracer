@@ -4,6 +4,7 @@ use crate::vec3::Vec3;
 pub trait Material {
     // hit_record.ray and hit_record.hit are the original ray and hit record.
     // may contain the former scattered ray. must set hit_record.scatter.
+    // scatter direction shouldn't be 0 if return true
     fn scatter(&self, hit_record: &mut HitRecord) -> bool;
 }
 
