@@ -421,7 +421,7 @@ fn simple_light() {
 }
 
 fn main() {
-    let x = 6;
+    let x = 1;
     match x {
         1 => bouncing_spheres(),
         2 => checkered_spheres(),

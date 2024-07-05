@@ -3,7 +3,7 @@ use crate::vec3::Vec3;
 
 pub trait Material {
     // hit_record.ray and hit_record.hit are the original ray and hit record.
-    // may contain the former scattered ray. update hit_record.scatter or set emission.
+    // may contain the former scattered ray. must set hit_record.scatter.
     fn scatter(&self, hit_record: &mut HitRecord) -> bool;
 }
 
@@ -34,8 +34,8 @@ impl Material for Metal {
             .direction
             .reflect(hit_record.get_hit().normal);
         let reflected = reflected.normalize() + Vec3::random_unit_vector() * self.fuzz;
+        hit_record.set_scatter(reflected);
         if reflected.dot(hit_record.get_hit().normal) > 0.0 {
-            hit_record.set_scatter(reflected);
             true
         } else {
             false
