@@ -6,7 +6,7 @@ use raytracer::hittable::{HittableList, Object};
 use raytracer::material::{Dielectric, Lambertian, Metal};
 use raytracer::noise::Noise;
 use raytracer::raytracer::RayTracer;
-use raytracer::shape::{Moving, Sphere};
+use raytracer::shape::{Moving, Quad, Sphere};
 use raytracer::texture::{CheckerTexture, ImageTexture, NoiseTexture, SolidColor};
 use raytracer::vec3::Vec3;
 
@@ -87,6 +87,10 @@ fn create_lambertian_noise(center: Vec3, radius: f64) -> Object<Sphere, NoiseTex
         Sphere::new(center, radius),
         NoiseTexture::new(Noise::default(), 4.0, Lambertian),
     )
+}
+
+fn create_quad(q: Vec3, u: Vec3, v: Vec3, color: Color) -> Object<Quad, SolidColor<Lambertian>> {
+    Object::new(Quad::new(q, u, v), SolidColor::new(color, Lambertian))
 }
 
 fn bouncing_spheres() {
@@ -259,13 +263,72 @@ fn noise_spheres() {
     raytracer.render().save("output/book2/image15.png");
 }
 
+fn quads() {
+    let mut hittable_list = HittableList::default();
+    hittable_list.push(create_quad(
+        Vec3::new(-3.0, -2.0, 5.0),
+        Vec3::new(0.0, 0.0, -4.0),
+        Vec3::new(0.0, 4.0, 0.0),
+        Color::new(1.0, 0.2, 0.2),
+    ));
+    hittable_list.push(create_quad(
+        Vec3::new(-2.0, -2.0, 0.0),
+        Vec3::new(4.0, 0.0, 0.0),
+        Vec3::new(0.0, 4.0, 0.0),
+        Color::new(0.2, 1.0, 0.2),
+    ));
+    hittable_list.push(create_quad(
+        Vec3::new(3.0, -2.0, 1.0),
+        Vec3::new(0.0, 0.0, 4.0),
+        Vec3::new(0.0, 4.0, 0.0),
+        Color::new(0.2, 0.2, 1.0),
+    ));
+    hittable_list.push(create_quad(
+        Vec3::new(-2.0, 3.0, 1.0),
+        Vec3::new(4.0, 0.0, 0.0),
+        Vec3::new(0.0, 0.0, 4.0),
+        Color::new(1.0, 0.5, 0.0),
+    ));
+    hittable_list.push(create_quad(
+        Vec3::new(-2.0, -3.0, 5.0),
+        Vec3::new(4.0, 0.0, 0.0),
+        Vec3::new(0.0, 0.0, -4.0),
+        Color::new(0.2, 0.8, 0.8),
+    ));
+
+    let image_width = 400;
+    let image_height = 400;
+    let camera = Camera::new(
+        PerspectiveParam {
+            look_from: Vec3::new(0.0, 0.0, 9.0),
+            look_at: Vec3::new(0.0, 0.0, 0.0),
+            view_up: Vec3::new(0.0, 1.0, 0.0),
+        },
+        LensParam {
+            fov: 80.0,
+            filter: Color::WHITE,
+            defocus_angle: 0.0,
+            focus_dist: 10.0,
+        },
+        ImageParam {
+            image_width,
+            image_height,
+            sample_per_pixel: 100,
+        },
+    );
+    let picture = raytracer::canvas::Canvas::empty(image_width, image_height);
+    let raytracer = RayTracer::new(camera, picture, hittable_list.build(), 50);
+    raytracer.render().save("output/book2/image16.png");
+}
+
 fn main() {
-    let x = 4;
+    let x = 5;
     match x {
         1 => bouncing_spheres(),
         2 => checkered_spheres(),
         3 => earth(),
         4 => noise_spheres(),
+        5 => quads(),
         _ => {}
     }
 }

@@ -12,10 +12,7 @@ pub struct Lambertian;
 
 impl Material for Lambertian {
     fn scatter(&self, hit_record: &mut HitRecord) {
-        let mut scatter_direction = hit_record.get_hit().normal + Vec3::random_unit_vector();
-        if scatter_direction.near_zero() {
-            scatter_direction = hit_record.get_hit().normal;
-        }
+        let scatter_direction = hit_record.get_hit().normal + Vec3::random_unit_vector();
         hit_record.set_scatter(scatter_direction, Color::WHITE);
     }
 }

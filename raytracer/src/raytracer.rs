@@ -28,8 +28,9 @@ impl RayTracer {
     }
 
     fn raytrace(world: &BVHNode, ray: Ray, left_depth: u32) -> Color {
-        if left_depth == 0 || ray.color.is_black() {
-            return Color::new(0.0, 0.0, 0.0);
+        if left_depth == 0 {
+            // (0, 0, 0)?
+            return Color::BLACK;
         }
         let mut hit_record = HitRecord::new(ray);
         if world.hit(&mut hit_record) {

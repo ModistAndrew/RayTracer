@@ -1,5 +1,6 @@
 use crate::aabb::AABB;
 use crate::hittable::HitRecord;
+use crate::interval::Interval;
 use crate::texture::UV;
 use crate::vec3::Vec3;
 use std::f64::consts::PI;
@@ -57,6 +58,59 @@ impl Shape for Sphere {
     fn aabb(&self) -> AABB {
         let r_vec = Vec3::new(self.radius, self.radius, self.radius);
         AABB::from_vec3(self.center - r_vec, self.center + r_vec)
+    }
+}
+
+pub struct Quad {
+    q: Vec3,
+    u: Vec3,
+    v: Vec3,
+    w: Vec3,
+    normal: Vec3,
+    d: f64,
+}
+
+impl Quad {
+    pub fn new(q: Vec3, u: Vec3, v: Vec3) -> Self {
+        let n = u * v;
+        let normal = n.normalize();
+        let d = normal.dot(q);
+        let w = n / n.length_squared();
+        Self {
+            q,
+            u,
+            v,
+            w,
+            normal,
+            d,
+        }
+    }
+}
+
+impl Shape for Quad {
+    fn hit(&self, hit_record: &mut HitRecord) -> bool {
+        let ray = &hit_record.ray;
+        let denominator = self.normal.dot(ray.direction);
+        let t = (self.d - self.normal.dot(ray.origin)) / denominator;
+        if !ray.interval.contains(t) {
+            return false;
+        }
+        let intersection = ray.at(t);
+        let hit_point = intersection - self.q;
+        let alpha = self.w.dot(hit_point * self.v);
+        let beta = self.w.dot(self.u * hit_point);
+        if Interval::UNIT.contains(alpha) && Interval::UNIT.contains(beta) {
+            hit_record.set_hit(t, self.normal, UV::new(alpha, beta));
+            return true;
+        }
+        false
+    }
+
+    fn aabb(&self) -> AABB {
+        AABB::union(
+            AABB::from_vec3(self.q, self.q + self.u + self.v),
+            AABB::from_vec3(self.q + self.u, self.q + self.v),
+        )
     }
 }
 

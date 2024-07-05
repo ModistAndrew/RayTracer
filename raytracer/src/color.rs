@@ -66,11 +66,6 @@ impl Color {
         gamma_component * gamma_component
     }
 
-    pub fn is_black(&self) -> bool {
-        const S: f64 = 1e-8;
-        self.r < S && self.g < S && self.b < S
-    }
-
     pub fn random(min: f64, max: f64) -> Color {
         let mut rng = rand::thread_rng();
         Self::new(

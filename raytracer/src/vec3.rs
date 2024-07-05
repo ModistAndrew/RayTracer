@@ -13,11 +13,6 @@ impl Vec3 {
         Self { x, y, z }
     }
 
-    pub fn near_zero(&self) -> bool {
-        const S: f64 = 1e-8;
-        self.x.abs() < S && self.y.abs() < S && self.z.abs() < S
-    }
-
     pub fn dot(self, other: Vec3) -> f64 {
         self.x * other.x + self.y * other.y + self.z * other.z
     }
