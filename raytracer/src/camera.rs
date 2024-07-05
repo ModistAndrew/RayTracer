@@ -1,4 +1,3 @@
-use crate::color::Color;
 use crate::interval::Interval;
 use rand::{random, Rng};
 
@@ -15,7 +14,6 @@ pub struct LensParam {
     pub fov: f64,
     pub defocus_angle: f64,
     pub focus_dist: f64,
-    pub filter: Color,
 }
 
 pub struct ImageParam {
@@ -32,7 +30,6 @@ pub struct Camera {
     pixel_width_ratio: f64,
     pixel_height_ratio: f64,
     sample_per_pixel: u32,
-    color: Color,
     defocus_disk_u: Vec3,
     defocus_disk_v: Vec3,
 }
@@ -73,7 +70,6 @@ impl Camera {
             pixel_width_ratio,
             pixel_height_ratio,
             sample_per_pixel: canvas_param.sample_per_pixel,
-            color: lens_param.filter,
             defocus_disk_u,
             defocus_disk_v,
         }
@@ -83,7 +79,7 @@ impl Camera {
         let origin = self.defocus_disk_sample();
         let direction =
             self.viewport_upper_left + self.viewport_u * u + self.viewport_v * v - origin;
-        Ray::new(origin, direction, self.color, random(), Interval::POSITIVE)
+        Ray::new(origin, direction, random(), Interval::POSITIVE)
     }
 
     fn defocus_disk_sample(&self) -> Vec3 {

@@ -1,3 +1,4 @@
+use crate::interval::Interval;
 use image::Rgb;
 use rand::Rng;
 
@@ -78,11 +79,11 @@ impl Color {
 
 impl From<Color> for Rgb<u8> {
     // Convert Color to Rgb<u8> by gamma-correcting the color components.
-    // Note that the color components should be in the range [0, 1]
+    // Note that the color components would be clamped to [0, 1] before conversion.
     fn from(color: Color) -> Self {
-        let r_byte = (Color::linear_to_gamma(color.r) * 256.0) as u8;
-        let g_byte = (Color::linear_to_gamma(color.g) * 256.0) as u8;
-        let b_byte = (Color::linear_to_gamma(color.b) * 256.0) as u8;
+        let r_byte = (Color::linear_to_gamma(Interval::UNIT.clamp(color.r)) * 256.0) as u8;
+        let g_byte = (Color::linear_to_gamma(Interval::UNIT.clamp(color.g)) * 256.0) as u8;
+        let b_byte = (Color::linear_to_gamma(Interval::UNIT.clamp(color.b)) * 256.0) as u8;
         Rgb([r_byte, g_byte, b_byte])
     }
 }

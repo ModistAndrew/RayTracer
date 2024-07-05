@@ -17,63 +17,42 @@ impl UV {
 }
 
 pub trait Texture {
-    type Inner: Material;
     fn value(&self, hit_record: &HitRecord) -> Color;
-    fn get_inner(&self) -> &Self::Inner;
 }
 
-impl<T: Texture> Material for T {
-    fn scatter(&self, hit_record: &mut HitRecord) {
-        self.get_inner().scatter(hit_record);
-        let color = self.value(hit_record);
-        hit_record
-            .get_scatter_mut()
-            .color
-            .blend_assign(color, BlendMode::Mul);
-    }
-}
-
-pub struct SolidColor<T: Material> {
+pub struct SolidColor {
     color: Color,
-    inner: T,
 }
 
-impl<T: Material> SolidColor<T> {
-    pub fn new(color: Color, inner: T) -> Self {
-        Self { color, inner }
+impl SolidColor {
+    pub fn new(color: Color) -> Self {
+        Self { color }
     }
 }
 
-impl<T: Material> Texture for SolidColor<T> {
-    type Inner = T;
+impl Texture for SolidColor {
     fn value(&self, _hit_record: &HitRecord) -> Color {
         self.color
     }
-    fn get_inner(&self) -> &T {
-        &self.inner
-    }
 }
 
-pub struct CheckerTexture<T: Material> {
+pub struct CheckerTexture {
     even: Color,
     odd: Color,
     inv_scale: f64,
-    inner: T,
 }
 
-impl<T: Material> CheckerTexture<T> {
-    pub fn new(even: Color, odd: Color, scale: f64, inner: T) -> Self {
+impl CheckerTexture {
+    pub fn new(even: Color, odd: Color, scale: f64) -> Self {
         Self {
             even,
             odd,
             inv_scale: 1.0 / scale,
-            inner,
         }
     }
 }
 
-impl<T: Material> Texture for CheckerTexture<T> {
-    type Inner = T;
+impl Texture for CheckerTexture {
     fn value(&self, hit_record: &HitRecord) -> Color {
         let p = hit_record.get_hit().position;
         let x = (p.x * self.inv_scale).floor() as i32;
@@ -85,59 +64,81 @@ impl<T: Material> Texture for CheckerTexture<T> {
             self.odd
         }
     }
-    fn get_inner(&self) -> &T {
-        &self.inner
-    }
 }
 
-pub struct ImageTexture<T: Material> {
+pub struct ImageTexture {
     image: Canvas,
-    inner: T,
 }
 
-impl<T: Material> ImageTexture<T> {
-    pub fn new(path: &str, inner: T) -> Self {
+impl ImageTexture {
+    pub fn new(path: &str) -> Self {
         Self {
             image: Canvas::from_path(path),
-            inner,
         }
     }
 }
 
-impl<T: Material> Texture for ImageTexture<T> {
-    type Inner = T;
+impl Texture for ImageTexture {
     fn value(&self, hit_record: &HitRecord) -> Color {
         self.image.read_uv(hit_record.get_hit().uv)
     }
-    fn get_inner(&self) -> &T {
-        &self.inner
-    }
 }
 
-pub struct NoiseTexture<T: Material> {
+pub struct NoiseTexture {
     noise: Noise,
     scale: f64,
-    inner: T,
 }
 
-impl<T: Material> NoiseTexture<T> {
-    pub fn new(noise: Noise, scale: f64, inner: T) -> Self {
-        Self {
-            noise,
-            scale,
-            inner,
-        }
+impl NoiseTexture {
+    pub fn new(noise: Noise, scale: f64) -> Self {
+        Self { noise, scale }
     }
 }
 
-impl<T: Material> Texture for NoiseTexture<T> {
-    type Inner = T;
+impl Texture for NoiseTexture {
     fn value(&self, hit_record: &HitRecord) -> Color {
         let p = hit_record.get_hit().position;
         Color::WHITE
             .lighten(0.5 * (1.0 + (self.scale * p.z + 10.0 * self.noise.turbulence(p, 7)).sin()))
     }
-    fn get_inner(&self) -> &T {
-        &self.inner
+}
+
+pub struct TexturedMaterial<T: Texture, M: Material> {
+    texture: T,
+    material: M,
+}
+
+impl<T: Texture, M: Material> TexturedMaterial<T, M> {
+    pub fn new(texture: T, material: M) -> Self {
+        Self { texture, material }
+    }
+}
+
+impl<T: Texture, M: Material> Material for TexturedMaterial<T, M> {
+    fn scatter(&self, hit_record: &mut HitRecord) -> bool {
+        if !self.material.scatter(hit_record) {
+            return false;
+        }
+        hit_record
+            .attenuation
+            .blend_assign(self.texture.value(hit_record), BlendMode::Mul);
+        true
+    }
+}
+
+pub struct Emissive<T: Texture> {
+    texture: T,
+}
+
+impl<T: Texture> Emissive<T> {
+    pub fn new(texture: T) -> Self {
+        Self { texture }
+    }
+}
+
+impl<T: Texture> Material for Emissive<T> {
+    fn scatter(&self, hit_record: &mut HitRecord) -> bool {
+        hit_record.emission = self.texture.value(hit_record);
+        false
     }
 }

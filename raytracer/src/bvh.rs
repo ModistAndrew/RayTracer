@@ -1,5 +1,5 @@
 use crate::aabb::AABB;
-use crate::hittable::{Empty, HitRecord, Hittable};
+use crate::hittable::{Empty, HitRecord, HitResult, Hittable};
 
 pub struct BVHNode {
     // left and right are the two children of the node.
@@ -35,12 +35,11 @@ impl BVHNode {
 }
 
 impl Hittable for BVHNode {
-    fn hit(&self, hit_record: &mut HitRecord) -> bool {
+    fn hit(&self, hit_record: &mut HitRecord) -> HitResult {
         if !self.aabb.hit(&hit_record.ray) {
-            return false;
+            return HitResult::Miss;
         }
-        // note that the | operator is used instead of || because we want to call both hit functions
-        self.left.hit(hit_record) | self.right.hit(hit_record)
+        HitResult::max(self.left.hit(hit_record), self.right.hit(hit_record))
     }
 
     fn aabb(&self) -> AABB {

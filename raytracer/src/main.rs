@@ -7,17 +7,19 @@ use raytracer::material::{Dielectric, Lambertian, Metal};
 use raytracer::noise::Noise;
 use raytracer::raytracer::RayTracer;
 use raytracer::shape::{Moving, Quad, Sphere};
-use raytracer::texture::{CheckerTexture, ImageTexture, NoiseTexture, SolidColor};
+use raytracer::texture::{
+    CheckerTexture, Emissive, ImageTexture, NoiseTexture, SolidColor, TexturedMaterial,
+};
 use raytracer::vec3::Vec3;
 
 fn create_lambertian(
     center: Vec3,
     radius: f64,
     albedo: Color,
-) -> Object<Sphere, SolidColor<Lambertian>> {
+) -> Object<Sphere, TexturedMaterial<SolidColor, Lambertian>> {
     Object::new(
         Sphere::new(center, radius),
-        SolidColor::new(albedo, Lambertian),
+        TexturedMaterial::new(SolidColor::new(albedo), Lambertian),
     )
 }
 
@@ -26,10 +28,10 @@ fn create_metal(
     radius: f64,
     albedo: Color,
     fuzz: f64,
-) -> Object<Sphere, SolidColor<Metal>> {
+) -> Object<Sphere, TexturedMaterial<SolidColor, Metal>> {
     Object::new(
         Sphere::new(center, radius),
-        SolidColor::new(albedo, Metal::new(fuzz)),
+        TexturedMaterial::new(SolidColor::new(albedo), Metal::new(fuzz)),
     )
 }
 
@@ -49,23 +51,21 @@ fn create_lambertian_moving(
     radius: f64,
     albedo: Color,
     direction: Vec3,
-) -> Object<Moving<Sphere>, SolidColor<Lambertian>> {
+) -> Object<Moving<Sphere>, TexturedMaterial<SolidColor, Lambertian>> {
     Object::new(
         Moving::new(direction, Sphere::new(center, radius)),
-        SolidColor::new(albedo, Lambertian),
+        TexturedMaterial::new(SolidColor::new(albedo), Lambertian),
     )
 }
 
 fn create_lambertian_checker(
     center: Vec3,
     radius: f64,
-) -> Object<Sphere, CheckerTexture<Lambertian>> {
+) -> Object<Sphere, TexturedMaterial<CheckerTexture, Lambertian>> {
     Object::new(
         Sphere::new(center, radius),
-        CheckerTexture::new(
-            Color::new(0.2, 0.3, 0.1),
-            Color::new(0.9, 0.9, 0.9),
-            0.32,
+        TexturedMaterial::new(
+            CheckerTexture::new(Color::new(0.2, 0.3, 0.1), Color::new(0.9, 0.9, 0.9), 0.32),
             Lambertian,
         ),
     )
@@ -75,22 +75,42 @@ fn create_lambertian_texture(
     center: Vec3,
     radius: f64,
     texture: &str,
-) -> Object<Sphere, ImageTexture<Lambertian>> {
+) -> Object<Sphere, TexturedMaterial<ImageTexture, Lambertian>> {
     Object::new(
         Sphere::new(center, radius),
-        ImageTexture::new(texture, Lambertian),
+        TexturedMaterial::new(ImageTexture::new(texture), Lambertian),
     )
 }
 
-fn create_lambertian_noise(center: Vec3, radius: f64) -> Object<Sphere, NoiseTexture<Lambertian>> {
+fn create_lambertian_noise(
+    center: Vec3,
+    radius: f64,
+) -> Object<Sphere, TexturedMaterial<NoiseTexture, Lambertian>> {
     Object::new(
         Sphere::new(center, radius),
-        NoiseTexture::new(Noise::default(), 4.0, Lambertian),
+        TexturedMaterial::new(NoiseTexture::new(Noise::default(), 4.0), Lambertian),
     )
 }
 
-fn create_quad(q: Vec3, u: Vec3, v: Vec3, color: Color) -> Object<Quad, SolidColor<Lambertian>> {
-    Object::new(Quad::new(q, u, v), SolidColor::new(color, Lambertian))
+fn create_quad(
+    q: Vec3,
+    u: Vec3,
+    v: Vec3,
+    albedo: Color,
+) -> Object<Quad, TexturedMaterial<SolidColor, Lambertian>> {
+    Object::new(
+        Quad::new(q, u, v),
+        TexturedMaterial::new(SolidColor::new(albedo), Lambertian),
+    )
+}
+
+fn create_quad_light(
+    q: Vec3,
+    u: Vec3,
+    v: Vec3,
+    light: Color,
+) -> Object<Quad, Emissive<SolidColor>> {
+    Object::new(Quad::new(q, u, v), Emissive::new(SolidColor::new(light)))
 }
 
 fn bouncing_spheres() {
@@ -152,7 +172,6 @@ fn bouncing_spheres() {
         },
         LensParam {
             fov: 20.0,
-            filter: Color::WHITE,
             defocus_angle: 0.6,
             focus_dist: 10.0,
         },
@@ -163,7 +182,13 @@ fn bouncing_spheres() {
         },
     );
     let picture = raytracer::canvas::Canvas::empty(image_width, image_height);
-    let raytracer = RayTracer::new(camera, picture, hittable_list.build(), 50);
+    let raytracer = RayTracer::new(
+        camera,
+        picture,
+        hittable_list.build(),
+        50,
+        Color::new(0.7, 0.8, 1.0),
+    );
     raytracer.render().save("output/book2/image2.png");
 }
 
@@ -182,7 +207,6 @@ fn checkered_spheres() {
         },
         LensParam {
             fov: 20.0,
-            filter: Color::WHITE,
             defocus_angle: 0.0,
             focus_dist: 10.0,
         },
@@ -193,7 +217,13 @@ fn checkered_spheres() {
         },
     );
     let picture = raytracer::canvas::Canvas::empty(image_width, image_height);
-    let raytracer = RayTracer::new(camera, picture, hittable_list.build(), 50);
+    let raytracer = RayTracer::new(
+        camera,
+        picture,
+        hittable_list.build(),
+        50,
+        Color::new(0.7, 0.8, 1.0),
+    );
     raytracer.render().save("output/book2/image3.png");
 }
 
@@ -215,7 +245,6 @@ fn earth() {
         },
         LensParam {
             fov: 20.0,
-            filter: Color::WHITE,
             defocus_angle: 0.0,
             focus_dist: 10.0,
         },
@@ -226,7 +255,13 @@ fn earth() {
         },
     );
     let picture = raytracer::canvas::Canvas::empty(image_width, image_height);
-    let raytracer = RayTracer::new(camera, picture, hittable_list.build(), 50);
+    let raytracer = RayTracer::new(
+        camera,
+        picture,
+        hittable_list.build(),
+        50,
+        Color::new(0.7, 0.8, 1.0),
+    );
     raytracer.render().save("output/book2/image5.png");
 }
 
@@ -248,7 +283,6 @@ fn noise_spheres() {
         },
         LensParam {
             fov: 20.0,
-            filter: Color::WHITE,
             defocus_angle: 0.0,
             focus_dist: 10.0,
         },
@@ -259,7 +293,13 @@ fn noise_spheres() {
         },
     );
     let picture = raytracer::canvas::Canvas::empty(image_width, image_height);
-    let raytracer = RayTracer::new(camera, picture, hittable_list.build(), 50);
+    let raytracer = RayTracer::new(
+        camera,
+        picture,
+        hittable_list.build(),
+        50,
+        Color::new(0.7, 0.8, 1.0),
+    );
     raytracer.render().save("output/book2/image15.png");
 }
 
@@ -306,7 +346,6 @@ fn quads() {
         },
         LensParam {
             fov: 80.0,
-            filter: Color::WHITE,
             defocus_angle: 0.0,
             focus_dist: 10.0,
         },
@@ -317,18 +356,63 @@ fn quads() {
         },
     );
     let picture = raytracer::canvas::Canvas::empty(image_width, image_height);
-    let raytracer = RayTracer::new(camera, picture, hittable_list.build(), 50);
+    let raytracer = RayTracer::new(
+        camera,
+        picture,
+        hittable_list.build(),
+        50,
+        Color::new(0.7, 0.8, 1.0),
+    );
     raytracer.render().save("output/book2/image16.png");
 }
 
+fn simple_light() {
+    let mut hittable_list = HittableList::default();
+    hittable_list.push(create_lambertian_noise(
+        Vec3::new(0.0, -1000.0, 0.0),
+        1000.0,
+    ));
+    hittable_list.push(create_lambertian_noise(Vec3::new(0.0, 2.0, 0.0), 2.0));
+    hittable_list.push(create_quad_light(
+        Vec3::new(3.0, 1.0, -2.0),
+        Vec3::new(2.0, 0.0, 0.0),
+        Vec3::new(0.0, 2.0, 0.0),
+        Color::new(4.0, 4.0, 4.0),
+    ));
+
+    let image_width = 400;
+    let image_height = 225;
+    let camera = Camera::new(
+        PerspectiveParam {
+            look_from: Vec3::new(26.0, 3.0, 6.0),
+            look_at: Vec3::new(0.0, 2.0, 0.0),
+            view_up: Vec3::new(0.0, 1.0, 0.0),
+        },
+        LensParam {
+            fov: 20.0,
+            defocus_angle: 0.0,
+            focus_dist: 10.0,
+        },
+        ImageParam {
+            image_width,
+            image_height,
+            sample_per_pixel: 100,
+        },
+    );
+    let picture = raytracer::canvas::Canvas::empty(image_width, image_height);
+    let raytracer = RayTracer::new(camera, picture, hittable_list.build(), 50, Color::BLACK);
+    raytracer.render().save("output/book2/image17.png");
+}
+
 fn main() {
-    let x = 5;
+    let x = 6;
     match x {
         1 => bouncing_spheres(),
         2 => checkered_spheres(),
         3 => earth(),
         4 => noise_spheres(),
         5 => quads(),
+        6 => simple_light(),
         _ => {}
     }
 }

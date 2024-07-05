@@ -7,7 +7,7 @@ use indicatif::ProgressBar;
 use crate::camera::Camera;
 use crate::canvas::Canvas;
 use crate::color::{BlendMode, Color};
-use crate::hittable::{HitRecord, Hittable};
+use crate::hittable::{HitRecord, HitResult, Hittable};
 use crate::ray::Ray;
 
 pub struct RayTracer {
@@ -15,32 +15,38 @@ pub struct RayTracer {
     canvas: Canvas,
     world: BVHNode, // Arc is used to share the world between threads
     max_depth: u32,
+    background: Color,
 }
 
 impl RayTracer {
-    pub fn new(camera: Camera, canvas: Canvas, world: BVHNode, max_depth: u32) -> Self {
+    pub fn new(
+        camera: Camera,
+        canvas: Canvas,
+        world: BVHNode,
+        max_depth: u32,
+        background: Color,
+    ) -> Self {
         Self {
             camera,
             canvas,
             world,
             max_depth,
+            background,
         }
     }
 
-    fn raytrace(world: &BVHNode, ray: Ray, left_depth: u32) -> Color {
+    fn raytrace(&self, ray: Ray, left_depth: u32) -> Color {
         if left_depth == 0 {
-            // (0, 0, 0)?
             return Color::BLACK;
         }
         let mut hit_record = HitRecord::new(ray);
-        if world.hit(&mut hit_record) {
-            Self::raytrace(world, hit_record.scatter.unwrap(), left_depth - 1)
-        } else {
-            let ray = hit_record.ray; // move the original ray back
-            let unit_direction = ray.direction.normalize();
-            let a = 0.5 * (unit_direction.y + 1.0);
-            let sky_color = Color::new(1.0 - 0.5 * a, 1.0 - 0.3 * a, 1.0);
-            sky_color.blend(ray.color, BlendMode::Mul)
+        match self.world.hit(&mut hit_record) {
+            HitResult::Miss => self.background,
+            HitResult::Absorb => hit_record.emission,
+            HitResult::Scatter => self
+                .raytrace(hit_record.scatter.unwrap(), left_depth - 1)
+                .blend(hit_record.attenuation, BlendMode::Mul)
+                .blend(hit_record.emission, BlendMode::Add),
         }
     }
 
@@ -56,7 +62,7 @@ impl RayTracer {
         for i in 0..width {
             for j in 0..height {
                 let ray = raytracer.camera.get_ray_at(i, j);
-                let color = Self::raytrace(&raytracer.world, ray, raytracer.max_depth);
+                let color = Self::raytrace(&raytracer, ray, raytracer.max_depth);
                 result.push(color);
             }
         }
