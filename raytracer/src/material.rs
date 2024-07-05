@@ -35,11 +35,7 @@ impl Material for Metal {
             .reflect(hit_record.get_hit().normal);
         let reflected = reflected.normalize() + Vec3::random_unit_vector() * self.fuzz;
         hit_record.set_scatter(reflected);
-        if reflected.dot(hit_record.get_hit().normal) > 0.0 {
-            true
-        } else {
-            false
-        }
+        reflected.dot(hit_record.get_hit().normal) > 0.0
     }
 }
 

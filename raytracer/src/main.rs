@@ -420,8 +420,71 @@ fn simple_light() {
     raytracer.render().save("output/book2/image18.png");
 }
 
+fn cornell_box() {
+    let mut hittable_list = HittableList::default();
+    hittable_list.push(create_quad(
+        Vec3::new(555.0, 0.0, 0.0),
+        Vec3::new(0.0, 555.0, 0.0),
+        Vec3::new(0.0, 0.0, 555.0),
+        Color::new(0.12, 0.45, 0.15),
+    ));
+    hittable_list.push(create_quad(
+        Vec3::new(0.0, 0.0, 0.0),
+        Vec3::new(0.0, 555.0, 0.0),
+        Vec3::new(0.0, 0.0, 555.0),
+        Color::new(0.65, 0.05, 0.05),
+    ));
+    hittable_list.push(create_quad_light(
+        Vec3::new(343.0, 554.0, 332.0),
+        Vec3::new(-130.0, 0.0, 0.0),
+        Vec3::new(0.0, 0.0, -105.0),
+        Color::new(15.0, 15.0, 15.0),
+    ));
+    hittable_list.push(create_quad(
+        Vec3::new(0.0, 0.0, 0.0),
+        Vec3::new(555.0, 0.0, 0.0),
+        Vec3::new(0.0, 0.0, 555.0),
+        Color::new(0.73, 0.73, 0.73),
+    ));
+    hittable_list.push(create_quad(
+        Vec3::new(555.0, 555.0, 555.0),
+        Vec3::new(-555.0, 0.0, 0.0),
+        Vec3::new(0.0, 0.0, -555.0),
+        Color::new(0.73, 0.73, 0.73),
+    ));
+    hittable_list.push(create_quad(
+        Vec3::new(0.0, 0.0, 555.0),
+        Vec3::new(555.0, 0.0, 0.0),
+        Vec3::new(0.0, 555.0, 0.0),
+        Color::new(0.73, 0.73, 0.73),
+    ));
+
+    let image_width = 600;
+    let image_height = 600;
+    let camera = Camera::new(
+        PerspectiveParam {
+            look_from: Vec3::new(278.0, 278.0, -800.0),
+            look_at: Vec3::new(278.0, 278.0, 0.0),
+            view_up: Vec3::new(0.0, 1.0, 0.0),
+        },
+        LensParam {
+            fov: 40.0,
+            defocus_angle: 0.0,
+            focus_dist: 10.0,
+        },
+        ImageParam {
+            image_width,
+            image_height,
+            sample_per_pixel: 200,
+        },
+    );
+    let picture = raytracer::canvas::Canvas::empty(image_width, image_height);
+    let raytracer = RayTracer::new(camera, picture, hittable_list.build(), 50, Color::BLACK);
+    raytracer.render().save("output/book2/image19.png");
+}
+
 fn main() {
-    let x = 1;
+    let x = 7;
     match x {
         1 => bouncing_spheres(),
         2 => checkered_spheres(),
@@ -429,6 +492,7 @@ fn main() {
         4 => noise_spheres(),
         5 => quads(),
         6 => simple_light(),
+        7 => cornell_box(),
         _ => {}
     }
 }

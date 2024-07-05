@@ -66,8 +66,7 @@ impl HitRecord {
                 self.ray.time,
                 Interval::POSITIVE,
             ),
-        }
-        );
+        });
     }
 
     pub fn does_hit(&self) -> bool {

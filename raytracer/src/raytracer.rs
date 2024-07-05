@@ -49,7 +49,7 @@ impl RayTracer {
                 self.raytrace(hit_record.get_output(), left_depth - 1)
                     .blend(attenuation, BlendMode::Mul)
                     .blend(emission, BlendMode::Add)
-            },
+            }
         }
     }
 
