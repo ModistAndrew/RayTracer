@@ -1,8 +1,9 @@
 use crate::canvas::Canvas;
-use crate::color::{BlendMode, Color};
+use crate::color::Color;
 use crate::hittable::HitRecord;
 use crate::material::Material;
 use crate::noise::Noise;
+use crate::vec3::Vec3;
 
 #[derive(Clone, Copy, Default)]
 pub struct UV {
@@ -119,9 +120,7 @@ impl<T: Texture, M: Material> Material for TexturedMaterial<T, M> {
         if !self.material.scatter(hit_record) {
             return false;
         }
-        hit_record
-            .attenuation
-            .blend_assign(self.texture.value(hit_record), BlendMode::Mul);
+        hit_record.get_scatter_mut().attenuation = self.texture.value(hit_record);
         true
     }
 }
@@ -138,7 +137,8 @@ impl<T: Texture> Emissive<T> {
 
 impl<T: Texture> Material for Emissive<T> {
     fn scatter(&self, hit_record: &mut HitRecord) -> bool {
-        hit_record.emission = self.texture.value(hit_record);
+        hit_record.set_scatter(Vec3::default()); // create dummy scatter
+        hit_record.get_scatter_mut().emission = self.texture.value(hit_record);
         false
     }
 }

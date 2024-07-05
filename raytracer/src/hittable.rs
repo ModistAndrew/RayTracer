@@ -16,12 +16,16 @@ pub struct Hit {
     pub uv: UV,
 }
 
+pub struct Scatter {
+    pub emission: Color,
+    pub attenuation: Color,
+    pub scatter: Ray,
+}
+
 pub struct HitRecord {
     pub ray: Ray, // the original ray
     pub hit: Option<Hit>,
-    pub emission: Color,
-    pub attenuation: Color,
-    pub scatter: Option<Ray>,
+    pub scatter: Option<Scatter>,
 }
 
 impl HitRecord {
@@ -30,8 +34,6 @@ impl HitRecord {
         Self {
             ray,
             hit: None,
-            emission: Color::BLACK,
-            attenuation: Color::WHITE,
             scatter: None,
         }
     }
@@ -55,12 +57,17 @@ impl HitRecord {
     }
 
     pub fn set_scatter(&mut self, direction: Vec3) {
-        self.scatter = Some(Ray::new(
-            self.get_hit().position,
-            direction,
-            self.ray.time,
-            Interval::POSITIVE,
-        ));
+        self.scatter = Some(Scatter {
+            emission: Color::BLACK,
+            attenuation: Color::WHITE,
+            scatter: Ray::new(
+                self.get_hit().position,
+                direction,
+                self.ray.time,
+                Interval::POSITIVE,
+            ),
+        }
+        );
     }
 
     pub fn does_hit(&self) -> bool {
@@ -73,7 +80,7 @@ impl HitRecord {
     }
 
     // for decoration
-    pub fn get_scatter_mut(&mut self) -> &mut Ray {
+    pub fn get_scatter_mut(&mut self) -> &mut Scatter {
         self.scatter.as_mut().unwrap()
     }
 
@@ -81,8 +88,12 @@ impl HitRecord {
         self.hit.as_ref().unwrap()
     }
 
-    pub fn get_scatter(&self) -> &Ray {
+    pub fn get_scatter(&self) -> &Scatter {
         self.scatter.as_ref().unwrap()
+    }
+
+    pub fn get_output(self) -> Ray {
+        self.scatter.unwrap().scatter
     }
 }
 

@@ -113,6 +113,17 @@ fn create_quad_light(
     Object::new(Quad::new(q, u, v), Emissive::new(SolidColor::new(light)))
 }
 
+fn create_sphere_light(
+    center: Vec3,
+    radius: f64,
+    light: Color,
+) -> Object<Sphere, Emissive<SolidColor>> {
+    Object::new(
+        Sphere::new(center, radius),
+        Emissive::new(SolidColor::new(light)),
+    )
+}
+
 fn bouncing_spheres() {
     let mut hittable_list = HittableList::default();
     hittable_list.push(create_lambertian_checker(
@@ -379,6 +390,11 @@ fn simple_light() {
         Vec3::new(0.0, 2.0, 0.0),
         Color::new(4.0, 4.0, 4.0),
     ));
+    hittable_list.push(create_sphere_light(
+        Vec3::new(0.0, 7.0, 0.0),
+        2.0,
+        Color::new(4.0, 4.0, 4.0),
+    ));
 
     let image_width = 400;
     let image_height = 225;
@@ -401,7 +417,7 @@ fn simple_light() {
     );
     let picture = raytracer::canvas::Canvas::empty(image_width, image_height);
     let raytracer = RayTracer::new(camera, picture, hittable_list.build(), 50, Color::BLACK);
-    raytracer.render().save("output/book2/image17.png");
+    raytracer.render().save("output/book2/image18.png");
 }
 
 fn main() {

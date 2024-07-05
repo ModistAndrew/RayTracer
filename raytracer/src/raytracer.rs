@@ -42,11 +42,14 @@ impl RayTracer {
         let mut hit_record = HitRecord::new(ray);
         match self.world.hit(&mut hit_record) {
             HitResult::Miss => self.background,
-            HitResult::Absorb => hit_record.emission,
-            HitResult::Scatter => self
-                .raytrace(hit_record.scatter.unwrap(), left_depth - 1)
-                .blend(hit_record.attenuation, BlendMode::Mul)
-                .blend(hit_record.emission, BlendMode::Add),
+            HitResult::Absorb => hit_record.get_scatter().emission,
+            HitResult::Scatter => {
+                let emission = hit_record.get_scatter().emission;
+                let attenuation = hit_record.get_scatter().attenuation;
+                self.raytrace(hit_record.get_output(), left_depth - 1)
+                    .blend(attenuation, BlendMode::Mul)
+                    .blend(emission, BlendMode::Add)
+            },
         }
     }
 
