@@ -1,4 +1,4 @@
-use std::ops::{Add, Sub};
+use std::ops::{Add, Index, Sub};
 
 #[derive(Clone, Copy)]
 pub struct Interval {
@@ -70,6 +70,10 @@ impl Interval {
     pub fn union(self, other: Self) -> Self {
         Interval::new(self.min.min(other.min), self.max.max(other.max))
     }
+
+    pub fn include(self, other: f64) -> Self {
+        Interval::new(self.min.min(other), self.max.max(other))
+    }
 }
 
 impl Add<f64> for Interval {
@@ -85,5 +89,17 @@ impl Sub<f64> for Interval {
 
     fn sub(self, t: f64) -> Interval {
         Interval::new(self.min - t, self.max - t)
+    }
+}
+
+impl Index<usize> for Interval {
+    type Output = f64;
+
+    fn index(&self, index: usize) -> &Self::Output {
+        match index {
+            0 => &self.min,
+            1 => &self.max,
+            _ => panic!("Index out of bounds"),
+        }
     }
 }

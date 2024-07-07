@@ -76,6 +76,16 @@ impl Vec3 {
     pub fn reflect(self, normal: Vec3) -> Vec3 {
         self - normal * 2.0 * self.dot(normal)
     }
+
+    pub fn rotate_y(self, radians: f64) -> Vec3 {
+        let sin_theta = radians.sin();
+        let cos_theta = radians.cos();
+        Vec3::new(
+            self.x * cos_theta + self.z * sin_theta,
+            self.y,
+            -self.x * sin_theta + self.z * cos_theta,
+        )
+    }
 }
 
 impl Neg for Vec3 {

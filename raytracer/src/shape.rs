@@ -196,3 +196,61 @@ impl<T: Shape> Shape for Moving<T> {
         stationary_aabb.union(stationary_aabb + self.direction)
     }
 }
+
+pub struct Translate<T: Shape> {
+    offset: Vec3,
+    shape: T,
+}
+
+impl<T: Shape> Translate<T> {
+    pub fn new(offset: Vec3, shape: T) -> Self {
+        Self { offset, shape }
+    }
+}
+
+impl<T: Shape> Shape for Translate<T> {
+    fn hit(&self, hit_record: &mut HitRecord) -> bool {
+        hit_record.ray.origin -= self.offset;
+        let hit = self.shape.hit(hit_record);
+        hit_record.ray.origin += self.offset;
+        if hit {
+            hit_record.get_hit_mut().position += self.offset;
+        }
+        hit
+    }
+    fn aabb(&self) -> AABB {
+        self.shape.aabb() + self.offset
+    }
+}
+
+pub struct RotationY<T: Shape> {
+    radians: f64,
+    shape: T,
+}
+
+impl<T: Shape> RotationY<T> {
+    pub fn new(angle: f64, shape: T) -> Self {
+        let radians = angle.to_radians();
+        Self { radians, shape }
+    }
+}
+
+impl<T: Shape> Shape for RotationY<T> {
+    fn hit(&self, hit_record: &mut HitRecord) -> bool {
+        hit_record.ray.origin = hit_record.ray.origin.rotate_y(-self.radians);
+        hit_record.ray.direction = hit_record.ray.direction.rotate_y(-self.radians);
+        let hit = self.shape.hit(hit_record);
+        hit_record.ray.origin = hit_record.ray.origin.rotate_y(self.radians);
+        hit_record.ray.direction = hit_record.ray.direction.rotate_y(self.radians);
+        if hit {
+            let mut hit_mut = hit_record.get_hit_mut();
+            hit_mut.position = hit_mut.position.rotate_y(self.radians);
+            hit_mut.normal = hit_mut.normal.rotate_y(self.radians);
+        }
+        hit
+    }
+
+    fn aabb(&self) -> AABB {
+        self.shape.aabb().rotate_y(self.radians)
+    }
+}

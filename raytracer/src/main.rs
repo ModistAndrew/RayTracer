@@ -6,7 +6,7 @@ use raytracer::hittable::{HittableList, Object};
 use raytracer::material::{Dielectric, Lambertian, Metal};
 use raytracer::noise::Noise;
 use raytracer::raytracer::RayTracer;
-use raytracer::shape::{Cube, Moving, Quad, Sphere};
+use raytracer::shape::{Cube, Moving, Quad, RotationY, Sphere, Translate};
 use raytracer::texture::{
     CheckerTexture, Emissive, ImageTexture, NoiseTexture, SolidColor, TexturedMaterial,
 };
@@ -124,13 +124,17 @@ fn create_sphere_light(
     )
 }
 
-fn create_cube(
+fn create_cube_rotated(
     a: Vec3,
-    b: Vec3,
     albedo: Color,
-) -> Object<Cube, TexturedMaterial<SolidColor, Lambertian>> {
+    translate: Vec3,
+    angle: f64,
+) -> Object<Translate<RotationY<Cube>>, TexturedMaterial<SolidColor, Lambertian>> {
     Object::new(
-        Cube::new(a, b),
+        Translate::new(
+            translate,
+            RotationY::new(angle, Cube::new(Vec3::default(), a)),
+        ),
         TexturedMaterial::new(SolidColor::new(albedo), Lambertian),
     )
 }
@@ -469,15 +473,17 @@ fn cornell_box() {
         Vec3::new(0.0, 555.0, 0.0),
         Color::new(0.73, 0.73, 0.73),
     ));
-    hittable_list.push(create_cube(
-        Vec3::new(130.0, 0.0, 65.0),
-        Vec3::new(295.0, 165.0, 230.0),
+    hittable_list.push(create_cube_rotated(
+        Vec3::new(165.0, 330.0, 165.0),
         Color::new(0.73, 0.73, 0.73),
-    ));
-    hittable_list.push(create_cube(
         Vec3::new(265.0, 0.0, 295.0),
-        Vec3::new(430.0, 330.0, 460.0),
+        15.0,
+    ));
+    hittable_list.push(create_cube_rotated(
+        Vec3::new(165.0, 165.0, 165.0),
         Color::new(0.73, 0.73, 0.73),
+        Vec3::new(130.0, 0.0, 65.0),
+        -18.0,
     ));
 
     let image_width = 600;
@@ -501,11 +507,11 @@ fn cornell_box() {
     );
     let picture = raytracer::canvas::Canvas::empty(image_width, image_height);
     let raytracer = RayTracer::new(camera, picture, hittable_list.build(), 50, Color::BLACK);
-    raytracer.render().save("output/book2/image20.png");
+    raytracer.render().save("output/book2/image21.png");
 }
 
 fn main() {
-    let x = 6;
+    let x = 7;
     match x {
         1 => bouncing_spheres(),
         2 => checkered_spheres(),

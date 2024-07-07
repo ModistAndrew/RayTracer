@@ -62,6 +62,22 @@ impl AABB {
             2
         }
     }
+
+    pub fn rotate_y(&self, radians: f64) -> Self {
+        let mut interval_x = Interval::default();
+        let mut interval_z = Interval::default();
+        let sin_theta = radians.sin();
+        let cos_theta = radians.cos();
+        for i in 0..2 {
+            for k in 0..2 {
+                let new_x = self.x[i] * cos_theta + self.z[k] * sin_theta;
+                let new_z = -self.x[i] * sin_theta + self.z[k] * cos_theta;
+                interval_x = interval_x.include(new_x);
+                interval_z = interval_z.include(new_z);
+            }
+        }
+        AABB::new(interval_x, self.y, interval_z)
+    }
 }
 
 impl Add<Vec3> for AABB {
