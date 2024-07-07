@@ -35,7 +35,7 @@ impl Interval {
         Interval::new(a.min(b), a.max(b))
     }
 
-    pub fn size(&self) -> f64 {
+    pub fn length(&self) -> f64 {
         self.max - self.min
     }
 

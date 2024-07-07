@@ -79,3 +79,13 @@ impl Material for Dielectric {
         true
     }
 }
+
+#[derive(Default)]
+pub struct Isotropic;
+
+impl Material for Isotropic {
+    fn scatter(&self, hit_record: &mut HitRecord) -> bool {
+        hit_record.set_scatter(Vec3::random_unit_vector());
+        true
+    }
+}

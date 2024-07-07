@@ -3,10 +3,10 @@ use rand::Rng;
 use raytracer::camera::{Camera, ImageParam, LensParam, PerspectiveParam};
 use raytracer::color::{BlendMode, Color};
 use raytracer::hittable::{HittableList, Object};
-use raytracer::material::{Dielectric, Lambertian, Metal};
+use raytracer::material::{Dielectric, Isotropic, Lambertian, Metal};
 use raytracer::noise::Noise;
 use raytracer::raytracer::RayTracer;
-use raytracer::shape::{Cube, Moving, Quad, RotationY, Sphere, Translate};
+use raytracer::shape::{ConstantMedium, Cube, Moving, Quad, RotationY, Sphere, Translate};
 use raytracer::texture::{
     CheckerTexture, Emissive, ImageTexture, NoiseTexture, SolidColor, TexturedMaterial,
 };
@@ -136,6 +136,24 @@ fn create_cube_rotated(
             RotationY::new(angle, Cube::new(Vec3::default(), a)),
         ),
         TexturedMaterial::new(SolidColor::new(albedo), Lambertian),
+    )
+}
+
+fn create_cube_rotated_smoke(
+    a: Vec3,
+    albedo: Color,
+    translate: Vec3,
+    angle: f64,
+) -> Object<ConstantMedium<Translate<RotationY<Cube>>>, TexturedMaterial<SolidColor, Isotropic>> {
+    Object::new(
+        ConstantMedium::new(
+            0.01,
+            Translate::new(
+                translate,
+                RotationY::new(angle, Cube::new(Vec3::default(), a)),
+            ),
+        ),
+        TexturedMaterial::new(SolidColor::new(albedo), Isotropic::default()),
     )
 }
 
@@ -510,8 +528,83 @@ fn cornell_box() {
     raytracer.render().save("output/book2/image21.png");
 }
 
+fn cornell_smoke() {
+    let mut hittable_list = HittableList::default();
+    hittable_list.push(create_quad(
+        Vec3::new(555.0, 0.0, 0.0),
+        Vec3::new(0.0, 555.0, 0.0),
+        Vec3::new(0.0, 0.0, 555.0),
+        Color::new(0.12, 0.45, 0.15),
+    ));
+    hittable_list.push(create_quad(
+        Vec3::new(0.0, 0.0, 0.0),
+        Vec3::new(0.0, 555.0, 0.0),
+        Vec3::new(0.0, 0.0, 555.0),
+        Color::new(0.65, 0.05, 0.05),
+    ));
+    hittable_list.push(create_quad_light(
+        Vec3::new(113.0, 554.0, 127.0),
+        Vec3::new(330.0, 0.0, 0.0),
+        Vec3::new(0.0, 0.0, 305.0),
+        Color::new(7.0, 7.0, 7.0),
+    ));
+    hittable_list.push(create_quad(
+        Vec3::new(0.0, 0.0, 0.0),
+        Vec3::new(555.0, 0.0, 0.0),
+        Vec3::new(0.0, 0.0, 555.0),
+        Color::new(0.73, 0.73, 0.73),
+    ));
+    hittable_list.push(create_quad(
+        Vec3::new(555.0, 555.0, 555.0),
+        Vec3::new(-555.0, 0.0, 0.0),
+        Vec3::new(0.0, 0.0, -555.0),
+        Color::new(0.73, 0.73, 0.73),
+    ));
+    hittable_list.push(create_quad(
+        Vec3::new(0.0, 0.0, 555.0),
+        Vec3::new(555.0, 0.0, 0.0),
+        Vec3::new(0.0, 555.0, 0.0),
+        Color::new(0.73, 0.73, 0.73),
+    ));
+    hittable_list.push(create_cube_rotated_smoke(
+        Vec3::new(165.0, 330.0, 165.0),
+        Color::BLACK,
+        Vec3::new(265.0, 0.0, 295.0),
+        15.0,
+    ));
+    hittable_list.push(create_cube_rotated_smoke(
+        Vec3::new(165.0, 165.0, 165.0),
+        Color::WHITE,
+        Vec3::new(130.0, 0.0, 65.0),
+        -18.0,
+    ));
+
+    let image_width = 600;
+    let image_height = 600;
+    let camera = Camera::new(
+        PerspectiveParam {
+            look_from: Vec3::new(278.0, 278.0, -800.0),
+            look_at: Vec3::new(278.0, 278.0, 0.0),
+            view_up: Vec3::new(0.0, 1.0, 0.0),
+        },
+        LensParam {
+            fov: 40.0,
+            defocus_angle: 0.0,
+            focus_dist: 10.0,
+        },
+        ImageParam {
+            image_width,
+            image_height,
+            sample_per_pixel: 200,
+        },
+    );
+    let picture = raytracer::canvas::Canvas::empty(image_width, image_height);
+    let raytracer = RayTracer::new(camera, picture, hittable_list.build(), 50, Color::BLACK);
+    raytracer.render().save("output/book2/image22.png");
+}
+
 fn main() {
-    let x = 7;
+    let x = 8;
     match x {
         1 => bouncing_spheres(),
         2 => checkered_spheres(),
@@ -520,6 +613,7 @@ fn main() {
         5 => quads(),
         6 => simple_light(),
         7 => cornell_box(),
+        8 => cornell_smoke(),
         _ => {}
     }
 }

@@ -5,9 +5,9 @@ use std::ops::{Add, Index, Sub};
 
 #[derive(Clone, Copy, Default)]
 pub struct AABB {
-    x: Interval,
-    y: Interval,
-    z: Interval,
+    pub x: Interval,
+    pub y: Interval,
+    pub z: Interval,
 }
 
 impl AABB {
@@ -50,13 +50,13 @@ impl AABB {
     }
 
     pub fn longest_axis(&self) -> usize {
-        if self.x.size() > self.y.size() {
-            if self.x.size() > self.z.size() {
+        if self.x.length() > self.y.length() {
+            if self.x.length() > self.z.length() {
                 0
             } else {
                 2
             }
-        } else if self.y.size() > self.z.size() {
+        } else if self.y.length() > self.z.length() {
             1
         } else {
             2
@@ -77,6 +77,14 @@ impl AABB {
             }
         }
         AABB::new(interval_x, self.y, interval_z)
+    }
+
+    pub fn min_point(&self) -> Vec3 {
+        Vec3::new(self.x.min, self.y.min, self.z.min)
+    }
+
+    pub fn max_point(&self) -> Vec3 {
+        Vec3::new(self.x.max, self.y.max, self.z.max)
     }
 }
 

@@ -1,6 +1,7 @@
 use crate::aabb::AABB;
 use crate::hittable::HitRecord;
 use crate::interval::Interval;
+use crate::ray::Ray;
 use crate::texture::UV;
 use crate::vec3::Vec3;
 use std::f64::consts::PI;
@@ -52,7 +53,7 @@ impl Shape for Sphere {
         }
         let position = ray.at(root);
         let outward_normal = (position - self.center) / self.radius;
-        hit_record.set_hit(root, position, outward_normal, Self::uv(outward_normal));
+        hit_record.set_hit(root, outward_normal, Self::uv(outward_normal));
         true
     }
 
@@ -101,7 +102,7 @@ impl Shape for Quad {
         let alpha = self.w.dot(planar_hit_point * self.v);
         let beta = self.w.dot(self.u * planar_hit_point);
         if Interval::UNIT.contains(alpha) && Interval::UNIT.contains(beta) {
-            hit_record.set_hit(t, intersection, self.normal, UV::new(alpha, beta));
+            hit_record.set_hit(t, self.normal, UV::new(alpha, beta));
             return true;
         }
         false
@@ -117,50 +118,36 @@ impl Shape for Quad {
 
 pub struct Cube {
     aabb: AABB,
+    quads: [Quad; 6],
 }
 
 impl Cube {
     pub fn new(a: Vec3, b: Vec3) -> Self {
-        Self {
-            aabb: AABB::from_vec3(a, b),
-        }
+        let aabb = AABB::from_vec3(a, b);
+        let min_point = aabb.min_point();
+        let max_point = aabb.max_point();
+        let dx = Vec3::new(aabb.x.length(), 0.0, 0.0);
+        let dy = Vec3::new(0.0, aabb.y.length(), 0.0);
+        let dz = Vec3::new(0.0, 0.0, aabb.z.length());
+        let quads = [
+            Quad::new(Vec3::new(min_point.x, min_point.y, max_point.z), dx, dy),
+            Quad::new(Vec3::new(max_point.x, min_point.y, max_point.z), -dz, dy),
+            Quad::new(Vec3::new(max_point.x, min_point.y, min_point.z), -dx, dy),
+            Quad::new(Vec3::new(min_point.x, min_point.y, min_point.z), dz, dy),
+            Quad::new(Vec3::new(min_point.x, max_point.y, max_point.z), dx, -dz),
+            Quad::new(Vec3::new(min_point.x, min_point.y, min_point.z), dx, dz),
+        ];
+        Self { aabb, quads }
     }
 }
 
 impl Shape for Cube {
     fn hit(&self, hit_record: &mut HitRecord) -> bool {
-        let ray = &hit_record.ray;
-        let mut axis_t = f64::NEG_INFINITY;
-        let mut axis = 0;
-        let mut axis_sign = 0;
-        for i in 0..3 {
-            let k = ray.direction[i];
-            if k == 0.0 {
-                continue;
-            }
-            let t_min = (if k > 0.0 {
-                self.aabb[i].min
-            } else {
-                self.aabb[i].max
-            } - ray.origin[i])
-                / k;
-            if t_min > axis_t {
-                axis_t = t_min;
-                axis = i;
-                axis_sign = if k > 0.0 { 1 } else { -1 };
-            }
+        let mut hit = false;
+        for quad in &self.quads {
+            hit |= quad.hit(hit_record);
         }
-        if !ray.interval.contains(axis_t) {
-            return false;
-        }
-        let hit_point = ray.at(axis_t);
-        if !self.aabb.contains(hit_point) {
-            return false;
-        }
-        let mut outward_normal = Vec3::default();
-        outward_normal[axis] = axis_sign as f64;
-        hit_record.set_hit(axis_t, hit_point, outward_normal, UV::default());
-        true
+        hit
     }
 
     fn aabb(&self) -> AABB {
@@ -252,5 +239,61 @@ impl<T: Shape> Shape for RotationY<T> {
 
     fn aabb(&self) -> AABB {
         self.shape.aabb().rotate_y(self.radians)
+    }
+}
+
+pub struct ConstantMedium<T: Shape> {
+    neg_inv_density: f64,
+    boundary: T,
+}
+
+impl<T: Shape> ConstantMedium<T> {
+    pub fn new(density: f64, boundary: T) -> Self {
+        Self {
+            neg_inv_density: -1.0 / density,
+            boundary,
+        }
+    }
+}
+
+impl<T: Shape> Shape for ConstantMedium<T> {
+    fn hit(&self, hit_record: &mut HitRecord) -> bool {
+        let ray = &hit_record.ray;
+        let mut rec1 = HitRecord::new(Ray::new(
+            ray.origin,
+            ray.direction,
+            ray.time,
+            Interval::UNIVERSE,
+        ));
+        if !self.boundary.hit(&mut rec1) {
+            return false;
+        }
+        let t1 = rec1.get_hit().t;
+        let mut rec2 = HitRecord::new(Ray::new(
+            ray.origin,
+            ray.direction,
+            ray.time,
+            Interval::new(t1 + 0.0001, f64::INFINITY),
+        ));
+        if !self.boundary.hit(&mut rec2) {
+            return false;
+        }
+        let t2 = rec2.get_hit().t;
+        let interval = Interval::new(t1, t2).intersect(ray.interval);
+        if interval.empty() {
+            return false;
+        }
+        let ray_length = hit_record.ray.direction.length();
+        let hit_distance = self.neg_inv_density * rand::random::<f64>().ln();
+        let t = interval.min + hit_distance / ray_length;
+        if !interval.surrounds(t) {
+            return false;
+        }
+        hit_record.set_hit(t, Vec3::default(), UV::default());
+        true
+    }
+
+    fn aabb(&self) -> AABB {
+        self.boundary.aabb()
     }
 }
