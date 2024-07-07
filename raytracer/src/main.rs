@@ -85,10 +85,30 @@ fn create_lambertian_texture(
 fn create_lambertian_noise(
     center: Vec3,
     radius: f64,
+    scale: f64,
 ) -> Object<Sphere, TexturedMaterial<NoiseTexture, Lambertian>> {
     Object::new(
         Sphere::new(center, radius),
-        TexturedMaterial::new(NoiseTexture::new(Noise::default(), 4.0), Lambertian),
+        TexturedMaterial::new(NoiseTexture::new(Noise::default(), scale), Lambertian),
+    )
+}
+
+fn create_light(center: Vec3, radius: f64, light: Color) -> Object<Sphere, Emissive<SolidColor>> {
+    Object::new(
+        Sphere::new(center, radius),
+        Emissive::new(SolidColor::new(light)),
+    )
+}
+
+fn create_smoke(
+    center: Vec3,
+    radius: f64,
+    albedo: Color,
+    density: f64,
+) -> Object<ConstantMedium<Sphere>, TexturedMaterial<SolidColor, Isotropic>> {
+    Object::new(
+        ConstantMedium::new(density, Sphere::new(center, radius)),
+        TexturedMaterial::new(SolidColor::new(albedo), Isotropic::default()),
     )
 }
 
@@ -113,14 +133,14 @@ fn create_quad_light(
     Object::new(Quad::new(q, u, v), Emissive::new(SolidColor::new(light)))
 }
 
-fn create_sphere_light(
-    center: Vec3,
-    radius: f64,
-    light: Color,
-) -> Object<Sphere, Emissive<SolidColor>> {
+fn create_cube(
+    a: Vec3,
+    b: Vec3,
+    albedo: Color,
+) -> Object<Cube, TexturedMaterial<SolidColor, Lambertian>> {
     Object::new(
-        Sphere::new(center, radius),
-        Emissive::new(SolidColor::new(light)),
+        Cube::new(a, b),
+        TexturedMaterial::new(SolidColor::new(albedo), Lambertian),
     )
 }
 
@@ -314,8 +334,9 @@ fn noise_spheres() {
     hittable_list.push(create_lambertian_noise(
         Vec3::new(0.0, -1000.0, 0.0),
         1000.0,
+        4.0,
     ));
-    hittable_list.push(create_lambertian_noise(Vec3::new(0.0, 2.0, 0.0), 2.0));
+    hittable_list.push(create_lambertian_noise(Vec3::new(0.0, 2.0, 0.0), 2.0, 4.0));
 
     let image_width = 400;
     let image_height = 225;
@@ -415,15 +436,16 @@ fn simple_light() {
     hittable_list.push(create_lambertian_noise(
         Vec3::new(0.0, -1000.0, 0.0),
         1000.0,
+        4.0,
     ));
-    hittable_list.push(create_lambertian_noise(Vec3::new(0.0, 2.0, 0.0), 2.0));
+    hittable_list.push(create_lambertian_noise(Vec3::new(0.0, 2.0, 0.0), 2.0, 4.0));
     hittable_list.push(create_quad_light(
         Vec3::new(3.0, 1.0, -2.0),
         Vec3::new(2.0, 0.0, 0.0),
         Vec3::new(0.0, 2.0, 0.0),
         Color::new(4.0, 4.0, 4.0),
     ));
-    hittable_list.push(create_sphere_light(
+    hittable_list.push(create_light(
         Vec3::new(0.0, 7.0, 0.0),
         2.0,
         Color::new(4.0, 4.0, 4.0),
@@ -603,8 +625,111 @@ fn cornell_smoke() {
     raytracer.render().save("output/book2/image22.png");
 }
 
+fn final_scene(image_width: u32, sample_per_pixel: u32, max_depth: u32) {
+    let mut world = HittableList::default();
+    let mut rng = rand::thread_rng();
+
+    let mut box1 = HittableList::default();
+    let boxes_per_side = 20;
+    for i in 0..boxes_per_side {
+        for j in 0..boxes_per_side {
+            let w = 100.0;
+            let x0 = -1000.0 + i as f64 * w;
+            let z0 = -1000.0 + j as f64 * w;
+            let y0 = 0.0;
+            let x1 = x0 + w;
+            let y1 = rng.gen_range(1.0..101.0);
+            let z1 = z0 + w;
+            box1.push(create_cube(
+                Vec3::new(x0, y0, z0),
+                Vec3::new(x1, y1, z1),
+                Color::new(0.48, 0.83, 0.53),
+            ));
+        }
+    }
+    world.push(box1.build());
+
+    world.push(create_quad_light(
+        Vec3::new(123.0, 554.0, 147.0),
+        Vec3::new(300.0, 0.0, 0.0),
+        Vec3::new(0.0, 0.0, 265.0),
+        Color::new(7.0, 7.0, 7.0),
+    ));
+    world.push(create_lambertian_moving(
+        Vec3::new(400.0, 400.0, 200.0),
+        50.0,
+        Color::new(0.7, 0.3, 0.1),
+        Vec3::new(30.0, 0.0, 0.0),
+    ));
+    world.push(create_dielectric(Vec3::new(260.0, 150.0, 45.0), 50.0, 1.5));
+    world.push(create_metal(
+        Vec3::new(0.0, 150.0, 145.0),
+        50.0,
+        Color::new(0.8, 0.8, 0.9),
+        1.0,
+    ));
+    world.push(create_dielectric(Vec3::new(360.0, 150.0, 145.0), 70.0, 1.5));
+    world.push(create_smoke(
+        Vec3::new(360.0, 150.0, 145.0),
+        70.0,
+        Color::new(0.2, 0.4, 0.9),
+        0.2,
+    ));
+    world.push(create_smoke(
+        Vec3::new(0.0, 0.0, 0.0),
+        5000.0,
+        Color::WHITE,
+        0.0001,
+    ));
+    world.push(create_lambertian_texture(
+        Vec3::new(400.0, 200.0, 400.0),
+        100.0,
+        "assets/earth_map.jpg",
+    ));
+    world.push(create_lambertian_noise(
+        Vec3::new(220.0, 280.0, 300.0),
+        80.0,
+        0.2,
+    ));
+
+    let mut box2 = HittableList::default();
+    let ns = 1000;
+    for _ in 0..ns {
+        box2.push(Object::new(
+            Translate::new(
+                Vec3::new(-100.0, 270.0, 395.0),
+                RotationY::new(15.0, Sphere::new(Vec3::random(0.0, 165.0), 10.0)),
+            ),
+            TexturedMaterial::new(SolidColor::new(Color::new(0.73, 0.73, 0.73)), Lambertian),
+        ));
+    }
+    world.push(box2.build());
+
+    let image_height = image_width;
+    let camera = Camera::new(
+        PerspectiveParam {
+            look_from: Vec3::new(478.0, 278.0, -600.0),
+            look_at: Vec3::new(278.0, 278.0, 0.0),
+            view_up: Vec3::new(0.0, 1.0, 0.0),
+        },
+        LensParam {
+            fov: 40.0,
+            defocus_angle: 0.0,
+            focus_dist: 10.0,
+        },
+        ImageParam {
+            image_width,
+            image_height,
+            sample_per_pixel,
+        },
+    );
+    let picture = raytracer::canvas::Canvas::empty(image_width, image_height);
+    let raytracer = RayTracer::new(camera, picture, world.build(), max_depth, Color::BLACK);
+    raytracer.render().save("output/book2/image23.png");
+}
+
 fn main() {
-    let x = 8;
+    let x = 9;
     match x {
         1 => bouncing_spheres(),
         2 => checkered_spheres(),
@@ -614,6 +739,7 @@ fn main() {
         6 => simple_light(),
         7 => cornell_box(),
         8 => cornell_smoke(),
-        _ => {}
+        9 => final_scene(800, 10000, 40),
+        _ => final_scene(400, 1000, 4),
     }
 }

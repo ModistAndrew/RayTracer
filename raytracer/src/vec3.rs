@@ -31,13 +31,17 @@ impl Vec3 {
         *self / self.length()
     }
 
-    pub fn random_in_cube() -> Vec3 {
+    pub fn random(min: f64, max: f64) -> Vec3 {
         let mut rng = rand::thread_rng();
         Vec3::new(
-            rng.gen_range(-1.0..1.0),
-            rng.gen_range(-1.0..1.0),
-            rng.gen_range(-1.0..1.0),
+            rng.gen_range(min..max),
+            rng.gen_range(min..max),
+            rng.gen_range(min..max),
         )
+    }
+
+    pub fn random_in_cube() -> Vec3 {
+        Vec3::random(-1.0, 1.0)
     }
 
     pub fn random_in_sphere() -> Vec3 {
