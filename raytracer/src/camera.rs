@@ -29,7 +29,7 @@ pub struct Camera {
     viewport_v: Vec3,
     pixel_width_ratio: f64,
     pixel_height_ratio: f64,
-    sample_per_pixel: u32,
+    sqrt_spp: u32,
     defocus_disk_u: Vec3,
     defocus_disk_v: Vec3,
 }
@@ -62,6 +62,8 @@ impl Camera {
             lens_param.focus_dist * (lens_param.defocus_angle.to_radians() / 2.0).tan();
         let defocus_disk_u = u * defocus_radius;
         let defocus_disk_v = v * defocus_radius;
+        let sample_per_pixel = canvas_param.sample_per_pixel;
+        let sqrt_spp = (sample_per_pixel as f64).sqrt() as u32;
         Self {
             origin: perspective_param.look_from,
             viewport_upper_left,
@@ -69,7 +71,7 @@ impl Camera {
             viewport_v,
             pixel_width_ratio,
             pixel_height_ratio,
-            sample_per_pixel: canvas_param.sample_per_pixel,
+            sqrt_spp,
             defocus_disk_u,
             defocus_disk_v,
         }
@@ -87,14 +89,16 @@ impl Camera {
         self.origin + (self.defocus_disk_u * p.x) + (self.defocus_disk_v * p.y)
     }
 
-    pub fn get_ray_at(&self, i: u32, j: u32) -> Ray {
+    pub fn get_ray_at(&self, i: u32, j: u32, si: u32, sj: u32) -> Ray {
         let mut rng = rand::thread_rng();
-        let u = (i as f64 + rng.gen_range(-0.5..0.5)) * self.pixel_width_ratio;
-        let v = (j as f64 + rng.gen_range(-0.5..0.5)) * self.pixel_height_ratio;
+        let u = (i as f64 + (si as f64 + rng.gen::<f64>()) / self.sqrt_spp as f64 - 0.5)
+            * self.pixel_width_ratio;
+        let v = (j as f64 + (sj as f64 + rng.gen::<f64>()) / self.sqrt_spp as f64 - 0.5)
+            * self.pixel_height_ratio;
         self.get_ray(u, v)
     }
 
-    pub fn sample_per_pixel(&self) -> u32 {
-        self.sample_per_pixel
+    pub fn sqrt_spp(&self) -> u32 {
+        self.sqrt_spp
     }
 }

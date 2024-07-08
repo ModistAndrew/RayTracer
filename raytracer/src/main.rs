@@ -547,7 +547,7 @@ fn cornell_box() {
     );
     let picture = raytracer::canvas::Canvas::empty(image_width, image_height);
     let raytracer = RayTracer::new(camera, picture, hittable_list.build(), 50, Color::BLACK);
-    raytracer.render().save("output/book2/image21.png");
+    raytracer.render().save("output/book3/image2.png");
 }
 
 fn cornell_smoke() {
@@ -729,7 +729,7 @@ fn final_scene(image_width: u32, sample_per_pixel: u32, max_depth: u32) {
 }
 
 fn main() {
-    let x = 9;
+    let x = 7;
     match x {
         1 => bouncing_spheres(),
         2 => checkered_spheres(),
