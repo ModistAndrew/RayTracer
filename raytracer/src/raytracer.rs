@@ -87,7 +87,8 @@ impl RayTracer {
         let image_size = (width * height) as usize;
         let sample_per_pixel = raytracer.camera.sample_per_pixel() as usize;
         let mut sample_per_pixel_left = sample_per_pixel;
-        let mut threads = Vec::with_capacity((sample_per_pixel + sample_per_thread - 1) / sample_per_thread);
+        let mut threads =
+            Vec::with_capacity((sample_per_pixel + sample_per_thread - 1) / sample_per_thread);
         let progress = ProgressBar::new(sample_per_pixel as u64);
         progress.set_style(
             indicatif::ProgressStyle::default_bar()
