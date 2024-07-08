@@ -57,32 +57,37 @@ impl RayTracer {
         progress_bar: Arc<ProgressBar>,
         raytracer: Arc<Self>,
         output: Arc<Mutex<Vec<Color>>>,
+        count: usize,
     ) {
         let width = raytracer.canvas.width();
         let height = raytracer.canvas.height();
         let image_size = (width * height) as usize;
-        let mut result = Vec::with_capacity(image_size);
-        for i in 0..width {
-            for j in 0..height {
-                let ray = raytracer.camera.get_ray_at(i, j);
-                let color = Self::raytrace(&raytracer, ray, raytracer.max_depth);
-                result.push(color);
+        let mut result = vec![Color::BLACK; image_size];
+        for _ in 0..count {
+            for i in 0..width {
+                for j in 0..height {
+                    let ray = raytracer.camera.get_ray_at(i, j);
+                    let color = Self::raytrace(&raytracer, ray, raytracer.max_depth);
+                    result[(i * height + j) as usize].blend_assign(color, BlendMode::Add);
+                }
             }
+            progress_bar.inc(1);
         }
         let mut output = output.lock().unwrap();
         for i in 0..image_size {
             output[i].blend_assign(result[i], BlendMode::Add);
         }
-        progress_bar.inc(1);
     }
 
     pub fn render(self) -> Self {
+        let sample_per_thread = 100usize;
         let raytracer = self;
         let width = raytracer.canvas.width();
         let height = raytracer.canvas.height();
         let image_size = (width * height) as usize;
-        let sample_per_pixel = raytracer.camera.sample_per_pixel();
-        let mut threads = Vec::with_capacity(sample_per_pixel as usize);
+        let sample_per_pixel = raytracer.camera.sample_per_pixel() as usize;
+        let mut sample_per_pixel_left = sample_per_pixel;
+        let mut threads = Vec::with_capacity((sample_per_pixel + sample_per_thread - 1) / sample_per_thread);
         let progress = ProgressBar::new(sample_per_pixel as u64);
         progress.set_style(
             indicatif::ProgressStyle::default_bar()
@@ -91,13 +96,15 @@ impl RayTracer {
         let progress = Arc::new(progress);
         let raytracer = Arc::new(raytracer);
         let output = Arc::new(Mutex::new(vec![Color::BLACK; image_size]));
-        for _ in 0..sample_per_pixel {
+        while sample_per_pixel_left > 0 {
             let progress_copy = progress.clone();
             let raytracer_copy = raytracer.clone();
             let output_copy = output.clone();
+            let count = sample_per_pixel_left.min(sample_per_thread);
             threads.push(thread::spawn(move || {
-                Self::render_task(progress_copy, raytracer_copy, output_copy)
+                Self::render_task(progress_copy, raytracer_copy, output_copy, count)
             }));
+            sample_per_pixel_left -= count;
         }
         // wait for all threads to finish
         threads
