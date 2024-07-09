@@ -1,7 +1,8 @@
 use crate::hittable::HitRecord;
+use crate::onb::ONB;
 use crate::vec3::Vec3;
 
-pub trait Material {
+pub trait Material: Sync + Send {
     // hit_record.ray and hit_record.hit are the original ray and hit record.
     // may contain the former scattered ray. must set hit_record.scatter.
     // scatter direction shouldn't be 0 if return true
@@ -12,7 +13,8 @@ pub struct Lambertian;
 
 impl Material for Lambertian {
     fn scatter(&self, hit_record: &mut HitRecord) -> bool {
-        let scatter_direction = hit_record.get_hit().normal + Vec3::random_unit_vector();
+        let uvw = ONB::normal(hit_record.get_hit().normal);
+        let scatter_direction = uvw.local(Vec3::random_cosine_direction());
         hit_record.set_scatter(scatter_direction);
         true
     }
@@ -80,7 +82,6 @@ impl Material for Dielectric {
     }
 }
 
-#[derive(Default)]
 pub struct Isotropic;
 
 impl Material for Isotropic {

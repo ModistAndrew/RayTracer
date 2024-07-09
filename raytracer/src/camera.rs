@@ -1,4 +1,5 @@
 use crate::interval::Interval;
+use crate::onb::ONB;
 use rand::{random, Rng};
 
 use crate::ray::Ray;
@@ -40,9 +41,10 @@ impl Camera {
         lens_param: LensParam,
         canvas_param: ImageParam,
     ) -> Self {
-        let w = (perspective_param.look_from - perspective_param.look_at).normalize();
-        let u = (perspective_param.view_up * w).normalize();
-        let v = w * u;
+        let uvw = ONB::normal_with_up(
+            perspective_param.look_from - perspective_param.look_at,
+            perspective_param.view_up,
+        );
 
         let viewport_height =
             2.0 * (lens_param.fov.to_radians() / 2.0).tan() * lens_param.focus_dist;
@@ -51,17 +53,19 @@ impl Camera {
 
         let pixel_width_ratio = 1.0 / canvas_param.image_width as f64;
         let pixel_height_ratio = 1.0 / canvas_param.image_height as f64;
-        let viewport_u = u * viewport_width;
-        let viewport_v = -v * viewport_height;
+        let viewport_u = uvw.local(Vec3::new(viewport_width, 0.0, 0.0));
+        let viewport_v = uvw.local(Vec3::new(0.0, -viewport_height, 0.0));
         let viewport_upper_left = perspective_param.look_from
-            - w * lens_param.focus_dist
-            - viewport_u / 2.0
-            - viewport_v / 2.0;
+            - uvw.local(Vec3::new(
+                viewport_width / 2.0,
+                -viewport_height / 2.0,
+                lens_param.focus_dist,
+            ));
 
         let defocus_radius =
             lens_param.focus_dist * (lens_param.defocus_angle.to_radians() / 2.0).tan();
-        let defocus_disk_u = u * defocus_radius;
-        let defocus_disk_v = v * defocus_radius;
+        let defocus_disk_u = uvw.local(Vec3::new(defocus_radius, 0.0, 0.0));
+        let defocus_disk_v = uvw.local(Vec3::new(0.0, defocus_radius, 0.0));
         let sample_per_pixel = canvas_param.sample_per_pixel;
         let sqrt_spp = (sample_per_pixel as f64).sqrt() as u32;
         Self {

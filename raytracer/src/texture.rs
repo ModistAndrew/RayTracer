@@ -3,7 +3,6 @@ use crate::color::Color;
 use crate::hittable::HitRecord;
 use crate::material::Material;
 use crate::noise::Noise;
-use crate::vec3::Vec3;
 
 #[derive(Clone, Copy, Default)]
 pub struct UV {
@@ -17,7 +16,7 @@ impl UV {
     }
 }
 
-pub trait Texture {
+pub trait Texture: Sync + Send {
     fn value(&self, hit_record: &HitRecord) -> Color;
 }
 
@@ -137,7 +136,6 @@ impl<T: Texture> Emissive<T> {
 
 impl<T: Texture> Material for Emissive<T> {
     fn scatter(&self, hit_record: &mut HitRecord) -> bool {
-        hit_record.set_scatter(Vec3::default()); // create dummy scatter
         hit_record.get_scatter_mut().emission = self.texture.value(hit_record);
         false
     }

@@ -1,7 +1,21 @@
 use crate::aabb::AABB;
-use crate::hittable::{Empty, HitRecord, HitResult, Hittable};
+use crate::hittable::{HitRecord, HitResult, Hittable};
+use crate::shape::Shape;
+use crate::transform::Transform;
 
-pub struct BVHNode {
+pub struct EmptyHittable;
+
+impl Hittable for EmptyHittable {
+    fn hit(&self, _hit_record: &mut HitRecord) -> HitResult {
+        HitResult::Miss
+    }
+
+    fn aabb(&self) -> AABB {
+        AABB::default()
+    }
+}
+
+pub struct HittableTree {
     // left and right are the two children of the node.
     // left isn't necessarily smaller than right, but each child is concentrated on one side of the parent for aabb pruning
     left: Box<dyn Hittable>,
@@ -10,31 +24,33 @@ pub struct BVHNode {
     aabb: AABB,
 }
 
-impl BVHNode {
-    // take a list of hittable and build a BVH tree
-    pub fn new(mut hittable_list: Vec<Box<dyn Hittable>>) -> Self {
-        let aabb = hittable_list
+impl HittableTree {
+    // take a list of AABBProvider and build a BVH tree
+    pub fn new(mut aabb_provider_list: Vec<Box<dyn Hittable>>) -> Self {
+        let aabb = aabb_provider_list
             .iter()
-            .fold(AABB::default(), |acc, hittable| acc.union(hittable.aabb()));
-        if hittable_list.len() <= 2 {
+            .fold(AABB::default(), |acc, aabb_provider| {
+                acc.union(aabb_provider.aabb())
+            });
+        if aabb_provider_list.len() <= 2 {
             return Self {
                 aabb,
-                left: hittable_list.pop().unwrap_or(Box::<Empty>::default()),
-                right: hittable_list.pop().unwrap_or(Box::<Empty>::default()),
+                left: aabb_provider_list.pop().unwrap_or(Box::new(EmptyHittable)),
+                right: aabb_provider_list.pop().unwrap_or(Box::new(EmptyHittable)),
             };
         }
         let axis = aabb.longest_axis();
-        hittable_list.sort_by(|a, b| a.aabb()[axis].min.total_cmp(&b.aabb()[axis].min));
-        let mid = hittable_list.len() / 2;
+        aabb_provider_list.sort_by(|a, b| a.aabb()[axis].min.total_cmp(&b.aabb()[axis].min));
+        let mid = aabb_provider_list.len() / 2;
         Self {
             aabb,
-            left: Box::new(BVHNode::new(hittable_list.split_off(mid))),
-            right: Box::new(BVHNode::new(hittable_list)),
+            left: Box::new(HittableTree::new(aabb_provider_list.split_off(mid))),
+            right: Box::new(HittableTree::new(aabb_provider_list)),
         }
     }
 }
 
-impl Hittable for BVHNode {
+impl Hittable for HittableTree {
     fn hit(&self, hit_record: &mut HitRecord) -> HitResult {
         if !self.aabb.hit(&hit_record.ray) {
             return HitResult::Miss;
@@ -44,5 +60,97 @@ impl Hittable for BVHNode {
 
     fn aabb(&self) -> AABB {
         self.aabb
+    }
+}
+
+#[derive(Default)]
+pub struct HittableTreeBuilder {
+    hittable_list: Vec<Box<dyn Hittable>>,
+}
+
+impl HittableTreeBuilder {
+    pub fn push<T: Hittable + 'static>(&mut self, hittable: T) {
+        self.hittable_list.push(Box::new(hittable));
+    }
+
+    pub fn build(self) -> HittableTree {
+        HittableTree::new(self.hittable_list)
+    }
+}
+
+pub struct EmptyShape;
+
+impl Shape for EmptyShape {
+    fn hit(&self, _hit_record: &mut HitRecord) -> bool {
+        false
+    }
+
+    fn transform(&mut self, _matrix: Transform) {}
+
+    fn aabb(&self) -> AABB {
+        AABB::default()
+    }
+}
+
+pub struct ShapeTree {
+    left: Box<dyn Shape>,
+    right: Box<dyn Shape>,
+    aabb: AABB,
+}
+
+impl ShapeTree {
+    pub fn new(mut shape_list: Vec<Box<dyn Shape>>) -> Self {
+        let aabb = shape_list
+            .iter()
+            .fold(AABB::default(), |acc, shape| acc.union(shape.aabb()));
+        if shape_list.len() <= 2 {
+            return Self {
+                aabb,
+                left: shape_list.pop().unwrap_or(Box::new(EmptyShape)),
+                right: shape_list.pop().unwrap_or(Box::new(EmptyShape)),
+            };
+        }
+        let axis = aabb.longest_axis();
+        shape_list.sort_by(|a, b| a.aabb()[axis].min.total_cmp(&b.aabb()[axis].min));
+        let mid = shape_list.len() / 2;
+        Self {
+            aabb,
+            left: Box::new(ShapeTree::new(shape_list.split_off(mid))),
+            right: Box::new(ShapeTree::new(shape_list)),
+        }
+    }
+}
+
+impl Shape for ShapeTree {
+    fn hit(&self, hit_record: &mut HitRecord) -> bool {
+        if !self.aabb.hit(&hit_record.ray) {
+            return false;
+        }
+        self.left.hit(hit_record) || self.right.hit(hit_record)
+    }
+
+    fn transform(&mut self, matrix: Transform) {
+        self.left.transform(matrix);
+        self.right.transform(matrix);
+        self.aabb = self.left.aabb().union(self.right.aabb());
+    }
+
+    fn aabb(&self) -> AABB {
+        self.aabb
+    }
+}
+
+#[derive(Default)]
+pub struct ShapeTreeBuilder {
+    shape_list: Vec<Box<dyn Shape>>,
+}
+
+impl ShapeTreeBuilder {
+    pub fn push<T: Shape + 'static>(&mut self, shape: T) {
+        self.shape_list.push(Box::new(shape));
+    }
+
+    pub fn build(self) -> ShapeTree {
+        ShapeTree::new(self.shape_list)
     }
 }

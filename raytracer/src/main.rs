@@ -1,15 +1,17 @@
 use rand::Rng;
+use raytracer::bvh::{HittableTreeBuilder, ShapeTreeBuilder};
 
 use raytracer::camera::{Camera, ImageParam, LensParam, PerspectiveParam};
 use raytracer::color::{BlendMode, Color};
-use raytracer::hittable::{HittableList, Object};
+use raytracer::hittable::Object;
 use raytracer::material::{Dielectric, Isotropic, Lambertian, Metal};
 use raytracer::noise::Noise;
 use raytracer::raytracer::RayTracer;
-use raytracer::shape::{ConstantMedium, Cube, Moving, Quad, RotationY, Sphere, Translate};
+use raytracer::shape::{ConstantMedium, Cube, Moving, Quad, Shape, Sphere};
 use raytracer::texture::{
     CheckerTexture, Emissive, ImageTexture, NoiseTexture, SolidColor, TexturedMaterial,
 };
+use raytracer::transform::Transform;
 use raytracer::vec3::Vec3;
 
 fn create_lambertian(
@@ -108,7 +110,7 @@ fn create_smoke(
 ) -> Object<ConstantMedium<Sphere>, TexturedMaterial<SolidColor, Isotropic>> {
     Object::new(
         ConstantMedium::new(density, Sphere::new(center, radius)),
-        TexturedMaterial::new(SolidColor::new(albedo), Isotropic::default()),
+        TexturedMaterial::new(SolidColor::new(albedo), Isotropic),
     )
 }
 
@@ -149,12 +151,12 @@ fn create_cube_rotated(
     albedo: Color,
     translate: Vec3,
     angle: f64,
-) -> Object<Translate<RotationY<Cube>>, TexturedMaterial<SolidColor, Lambertian>> {
+) -> Object<Cube, TexturedMaterial<SolidColor, Lambertian>> {
+    let mut cube = Cube::new(Vec3::default(), a);
+    cube.transform(Transform::rotate_y(angle));
+    cube.transform(Transform::translate(translate));
     Object::new(
-        Translate::new(
-            translate,
-            RotationY::new(angle, Cube::new(Vec3::default(), a)),
-        ),
+        cube,
         TexturedMaterial::new(SolidColor::new(albedo), Lambertian),
     )
 }
@@ -164,21 +166,18 @@ fn create_cube_rotated_smoke(
     albedo: Color,
     translate: Vec3,
     angle: f64,
-) -> Object<ConstantMedium<Translate<RotationY<Cube>>>, TexturedMaterial<SolidColor, Isotropic>> {
+) -> Object<ConstantMedium<Cube>, TexturedMaterial<SolidColor, Isotropic>> {
+    let mut cube = Cube::new(Vec3::default(), a);
+    cube.transform(Transform::rotate_y(angle));
+    cube.transform(Transform::translate(translate));
     Object::new(
-        ConstantMedium::new(
-            0.01,
-            Translate::new(
-                translate,
-                RotationY::new(angle, Cube::new(Vec3::default(), a)),
-            ),
-        ),
-        TexturedMaterial::new(SolidColor::new(albedo), Isotropic::default()),
+        ConstantMedium::new(0.01, cube),
+        TexturedMaterial::new(SolidColor::new(albedo), Isotropic),
     )
 }
 
 fn bouncing_spheres() {
-    let mut hittable_list = HittableList::default();
+    let mut hittable_list = HittableTreeBuilder::default();
     hittable_list.push(create_lambertian_checker(
         Vec3::new(0.0, -1000.0, 0.0),
         1000.0,
@@ -257,7 +256,7 @@ fn bouncing_spheres() {
 }
 
 fn checkered_spheres() {
-    let mut hittable_list = HittableList::default();
+    let mut hittable_list = HittableTreeBuilder::default();
     hittable_list.push(create_lambertian_checker(Vec3::new(0.0, -10.0, 0.0), 10.0));
     hittable_list.push(create_lambertian_checker(Vec3::new(0.0, 10.0, 0.0), 10.0));
 
@@ -292,7 +291,7 @@ fn checkered_spheres() {
 }
 
 fn earth() {
-    let mut hittable_list = HittableList::default();
+    let mut hittable_list = HittableTreeBuilder::default();
     hittable_list.push(create_lambertian_texture(
         Vec3::new(0.0, 0.0, 0.0),
         2.0,
@@ -330,7 +329,7 @@ fn earth() {
 }
 
 fn noise_spheres() {
-    let mut hittable_list = HittableList::default();
+    let mut hittable_list = HittableTreeBuilder::default();
     hittable_list.push(create_lambertian_noise(
         Vec3::new(0.0, -1000.0, 0.0),
         1000.0,
@@ -369,7 +368,7 @@ fn noise_spheres() {
 }
 
 fn quads() {
-    let mut hittable_list = HittableList::default();
+    let mut hittable_list = HittableTreeBuilder::default();
     hittable_list.push(create_quad(
         Vec3::new(-3.0, -2.0, 5.0),
         Vec3::new(0.0, 0.0, -4.0),
@@ -432,7 +431,7 @@ fn quads() {
 }
 
 fn simple_light() {
-    let mut hittable_list = HittableList::default();
+    let mut hittable_list = HittableTreeBuilder::default();
     hittable_list.push(create_lambertian_noise(
         Vec3::new(0.0, -1000.0, 0.0),
         1000.0,
@@ -476,7 +475,7 @@ fn simple_light() {
 }
 
 fn cornell_box() {
-    let mut hittable_list = HittableList::default();
+    let mut hittable_list = HittableTreeBuilder::default();
     hittable_list.push(create_quad(
         Vec3::new(555.0, 0.0, 0.0),
         Vec3::new(0.0, 555.0, 0.0),
@@ -547,11 +546,11 @@ fn cornell_box() {
     );
     let picture = raytracer::canvas::Canvas::empty(image_width, image_height);
     let raytracer = RayTracer::new(camera, picture, hittable_list.build(), 50, Color::BLACK);
-    raytracer.render().save("output/book3/image2.png");
+    raytracer.render().save("output/book3/image3.png");
 }
 
 fn cornell_smoke() {
-    let mut hittable_list = HittableList::default();
+    let mut hittable_list = HittableTreeBuilder::default();
     hittable_list.push(create_quad(
         Vec3::new(555.0, 0.0, 0.0),
         Vec3::new(0.0, 555.0, 0.0),
@@ -626,10 +625,10 @@ fn cornell_smoke() {
 }
 
 fn final_scene(image_width: u32, sample_per_pixel: u32, max_depth: u32) {
-    let mut world = HittableList::default();
+    let mut world = HittableTreeBuilder::default();
     let mut rng = rand::thread_rng();
 
-    let mut box1 = HittableList::default();
+    let mut box1 = HittableTreeBuilder::default();
     let boxes_per_side = 20;
     for i in 0..boxes_per_side {
         for j in 0..boxes_per_side {
@@ -692,18 +691,18 @@ fn final_scene(image_width: u32, sample_per_pixel: u32, max_depth: u32) {
         0.2,
     ));
 
-    let mut box2 = HittableList::default();
     let ns = 1000;
+    let mut spheres = ShapeTreeBuilder::default();
     for _ in 0..ns {
-        box2.push(Object::new(
-            Translate::new(
-                Vec3::new(-100.0, 270.0, 395.0),
-                RotationY::new(15.0, Sphere::new(Vec3::random(0.0, 165.0), 10.0)),
-            ),
-            TexturedMaterial::new(SolidColor::new(Color::new(0.73, 0.73, 0.73)), Lambertian),
-        ));
+        spheres.push(Sphere::new(Vec3::random(0.0, 165.0), 10.0));
     }
-    world.push(box2.build());
+    let mut spheres = spheres.build();
+    spheres.transform(Transform::rotate_y(15.0));
+    spheres.transform(Transform::translate(Vec3::new(-100.0, 270.0, 395.0)));
+    world.push(Object::new(
+        spheres,
+        TexturedMaterial::new(SolidColor::new(Color::new(0.73, 0.73, 0.73)), Lambertian),
+    ));
 
     let image_height = image_width;
     let camera = Camera::new(
@@ -729,7 +728,7 @@ fn final_scene(image_width: u32, sample_per_pixel: u32, max_depth: u32) {
 }
 
 fn main() {
-    let x = 7;
+    let x = 1;
     match x {
         1 => bouncing_spheres(),
         2 => checkered_spheres(),

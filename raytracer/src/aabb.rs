@@ -79,11 +79,11 @@ impl AABB {
         AABB::new(interval_x, self.y, interval_z)
     }
 
-    pub fn min_point(&self) -> Vec3 {
+    pub fn min_pos(&self) -> Vec3 {
         Vec3::new(self.x.min, self.y.min, self.z.min)
     }
 
-    pub fn max_point(&self) -> Vec3 {
+    pub fn max_pos(&self) -> Vec3 {
         Vec3::new(self.x.max, self.y.max, self.z.max)
     }
 }

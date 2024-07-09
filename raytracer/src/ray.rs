@@ -21,4 +21,8 @@ impl Ray {
     pub fn at(&self, t: f64) -> Vec3 {
         self.origin + self.direction * t
     }
+
+    pub fn new_ray(&self, origin: Vec3, direction: Vec3) -> Self {
+        Self::new(origin, direction, self.time, Interval::POSITIVE)
+    }
 }
