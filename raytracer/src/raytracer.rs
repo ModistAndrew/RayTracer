@@ -69,7 +69,7 @@ impl RayTracer {
             for i in 0..width {
                 for j in 0..height {
                     let ray = raytracer.camera.get_ray_at(i, j, si, sj);
-                    let color = Self::raytrace(&raytracer, ray, raytracer.max_depth);
+                    let color = Self::raytrace(&raytracer, ray, raytracer.max_depth).fix();
                     result[(i * height + j) as usize].blend_assign(color, BlendMode::Add);
                 }
             }

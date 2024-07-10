@@ -75,6 +75,14 @@ impl Color {
             rng.gen_range(min..max),
         )
     }
+
+    // abandon nan and inf
+    pub fn fix(self) -> Color {
+        let r = if self.r.is_normal() { self.r } else { 0.0 };
+        let g = if self.g.is_normal() { self.g } else { 0.0 };
+        let b = if self.b.is_normal() { self.b } else { 0.0 };
+        Self::new(r, g, b)
+    }
 }
 
 impl From<Color> for Rgb<u8> {
