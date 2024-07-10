@@ -150,6 +150,21 @@ fn create_cube_rotated(
     )
 }
 
+fn create_cube_rotated_metal(
+    a: Vec3,
+    albedo: Color,
+    translate: Vec3,
+    angle: f64,
+) -> Object<ShapeList, TexturedMaterial<SolidColor, Metal>> {
+    let mut cube = ShapeList::cube(Vec3::default(), a);
+    cube.transform(Transform::rotate_y(angle.to_radians()));
+    cube.transform(Transform::translate(translate));
+    Object::new(
+        cube,
+        TexturedMaterial::new(SolidColor::new(albedo), Metal::new(0.0)),
+    )
+}
+
 fn create_cube_rotated_smoke(
     a: Vec3,
     albedo: Color,
@@ -472,7 +487,7 @@ fn cornell_box() {
         Vec3::new(0.0, 555.0, 0.0),
         Color::new(0.73, 0.73, 0.73),
     ));
-    world.add_object(create_cube_rotated(
+    world.add_object(create_cube_rotated_metal(
         Vec3::new(165.0, 330.0, 165.0),
         Color::new(0.73, 0.73, 0.73),
         Vec3::new(265.0, 0.0, 295.0),
@@ -511,7 +526,7 @@ fn cornell_box() {
     );
     let picture = raytracer::canvas::Canvas::empty(image_width, image_height);
     let raytracer = RayTracer::new(camera, picture, world.build(), 50);
-    raytracer.render().save("output/book3/image11.png");
+    raytracer.render().save("output/book3/image12.png");
 }
 
 fn cornell_smoke() {
