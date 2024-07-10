@@ -7,6 +7,7 @@ use crate::ray::Ray;
 use crate::shape::{Shape, ShapePDFProvider};
 use crate::texture::UV;
 use crate::vec3::Vec3;
+use std::f64::consts::PI;
 
 pub struct HitInfo {
     pub t: f64,
@@ -126,14 +127,9 @@ impl HitRecord {
         } else {
             shape_pdf.generate(origin)
         };
-        let value = if shape_pdf.empty() {
-            self.get_scatter_pdf().prob(v)
-        } else {
-            0.5 * self.get_scatter_pdf().prob(v) + 0.5 * shape_pdf.prob(v, origin)
-        };
         (
             self.ray.new_ray(self.get_hit().position, v),
-            value,
+            0.5 / PI,
             self.get_scatter_pdf().prob(v),
         )
     }
