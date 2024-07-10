@@ -1,5 +1,4 @@
 use crate::aabb::AABB;
-use crate::bvh::{ShapeTree, ShapeTreeBuilder};
 use crate::hittable::HitRecord;
 use crate::interval::Interval;
 use crate::ray::Ray;
@@ -123,6 +122,10 @@ impl Shape for Quad {
         self.q = matrix.pos(self.q);
         self.u = matrix.direction(self.u);
         self.v = matrix.direction(self.v);
+        let n = self.u * self.v;
+        self.normal = n.normalize();
+        self.d = self.normal.dot(self.q);
+        self.w = n / n.length_squared();
     }
 
     fn aabb(&self) -> AABB {
@@ -134,7 +137,7 @@ impl Shape for Quad {
 }
 
 pub struct Cube {
-    quads: ShapeTree,
+    quads: [Quad; 6],
 }
 
 impl Cube {
@@ -145,54 +148,39 @@ impl Cube {
         let dx = Vec3::new(aabb.x.length(), 0.0, 0.0);
         let dy = Vec3::new(0.0, aabb.y.length(), 0.0);
         let dz = Vec3::new(0.0, 0.0, aabb.z.length());
-        let mut builder = ShapeTreeBuilder::default();
-        builder.push(Quad::new(
-            Vec3::new(min_pos.x, min_pos.y, max_pos.z),
-            dx,
-            dy,
-        ));
-        builder.push(Quad::new(
-            Vec3::new(max_pos.x, min_pos.y, max_pos.z),
-            -dz,
-            dy,
-        ));
-        builder.push(Quad::new(
-            Vec3::new(max_pos.x, min_pos.y, min_pos.z),
-            -dx,
-            dy,
-        ));
-        builder.push(Quad::new(
-            Vec3::new(min_pos.x, min_pos.y, min_pos.z),
-            dz,
-            dy,
-        ));
-        builder.push(Quad::new(
-            Vec3::new(min_pos.x, max_pos.y, max_pos.z),
-            dx,
-            -dz,
-        ));
-        builder.push(Quad::new(
-            Vec3::new(min_pos.x, min_pos.y, min_pos.z),
-            dx,
-            dz,
-        ));
-        Self {
-            quads: builder.build(),
-        }
+        let quads = [
+            Quad::new(Vec3::new(min_pos.x, min_pos.y, max_pos.z), dx, dy),
+            Quad::new(Vec3::new(max_pos.x, min_pos.y, max_pos.z), -dz, dy),
+            Quad::new(Vec3::new(max_pos.x, min_pos.y, min_pos.z), -dx, dy),
+            Quad::new(Vec3::new(min_pos.x, min_pos.y, min_pos.z), dz, dy),
+            Quad::new(Vec3::new(min_pos.x, max_pos.y, max_pos.z), dx, -dz),
+            Quad::new(Vec3::new(min_pos.x, min_pos.y, min_pos.z), dx, dz),
+        ];
+        Self { quads }
     }
 }
 
 impl Shape for Cube {
     fn hit(&self, hit_record: &mut HitRecord) -> bool {
-        self.quads.hit(hit_record)
+        let mut hit = false;
+        for quad in &self.quads {
+            hit |= quad.hit(hit_record);
+        }
+        hit
     }
 
     fn transform(&mut self, matrix: Transform) {
-        self.quads.transform(matrix);
+        for quad in &mut self.quads {
+            quad.transform(matrix);
+        }
     }
 
     fn aabb(&self) -> AABB {
-        self.quads.aabb()
+        let mut aabb = AABB::default();
+        for quad in &self.quads {
+            aabb = aabb.union(quad.aabb());
+        }
+        aabb
     }
 }
 

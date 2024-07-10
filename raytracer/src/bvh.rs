@@ -55,7 +55,7 @@ impl Hittable for HittableTree {
         if !self.aabb.hit(&hit_record.ray) {
             return HitResult::Miss;
         }
-        HitResult::max(self.left.hit(hit_record), self.right.hit(hit_record))
+        HitResult::last_not_miss(self.left.hit(hit_record), self.right.hit(hit_record))
     }
 
     fn aabb(&self) -> AABB {

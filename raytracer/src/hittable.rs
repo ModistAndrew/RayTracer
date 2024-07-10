@@ -104,11 +104,10 @@ pub enum HitResult {
 }
 
 impl HitResult {
-    pub fn max(self, other: Self) -> Self {
-        if self as i8 > other as i8 {
-            self
-        } else {
-            other
+    pub fn last_not_miss(self, other: Self) -> Self {
+        match other {
+            Self::Miss => self,
+            _ => other,
         }
     }
 }

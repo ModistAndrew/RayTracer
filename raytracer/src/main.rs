@@ -153,7 +153,7 @@ fn create_cube_rotated(
     angle: f64,
 ) -> Object<Cube, TexturedMaterial<SolidColor, Lambertian>> {
     let mut cube = Cube::new(Vec3::default(), a);
-    cube.transform(Transform::rotate_y(angle));
+    cube.transform(Transform::rotate_y(angle.to_radians()));
     cube.transform(Transform::translate(translate));
     Object::new(
         cube,
@@ -168,7 +168,7 @@ fn create_cube_rotated_smoke(
     angle: f64,
 ) -> Object<ConstantMedium<Cube>, TexturedMaterial<SolidColor, Isotropic>> {
     let mut cube = Cube::new(Vec3::default(), a);
-    cube.transform(Transform::rotate_y(angle));
+    cube.transform(Transform::rotate_y(angle.to_radians()));
     cube.transform(Transform::translate(translate));
     Object::new(
         ConstantMedium::new(0.01, cube),
@@ -697,7 +697,7 @@ fn final_scene(image_width: u32, sample_per_pixel: u32, max_depth: u32) {
         spheres.push(Sphere::new(Vec3::random(0.0, 165.0), 10.0));
     }
     let mut spheres = spheres.build();
-    spheres.transform(Transform::rotate_y(15.0));
+    spheres.transform(Transform::rotate_y(15.0.to_radians()));
     spheres.transform(Transform::translate(Vec3::new(-100.0, 270.0, 395.0)));
     world.push(Object::new(
         spheres,
@@ -728,7 +728,7 @@ fn final_scene(image_width: u32, sample_per_pixel: u32, max_depth: u32) {
 }
 
 fn main() {
-    let x = 1;
+    let x = 7;
     match x {
         1 => bouncing_spheres(),
         2 => checkered_spheres(),
