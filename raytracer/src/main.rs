@@ -479,6 +479,11 @@ fn cornell_box() {
         15.0,
     ));
     world.add_object(create_dielectric(Vec3::new(190.0, 90.0, 190.0), 90.0, 1.5));
+    world.add_light(Quad::new(
+        Vec3::new(343.0, 554.0, 332.0),
+        Vec3::new(-130.0, 0.0, 0.0),
+        Vec3::new(0.0, 0.0, -105.0),
+    ));
     world.add_light(Sphere::new(Vec3::new(190.0, 90.0, 190.0), 90.0));
 
     let image_width = 600;
@@ -502,7 +507,7 @@ fn cornell_box() {
     );
     let picture = raytracer::canvas::Canvas::empty(image_width, image_height);
     let raytracer = RayTracer::new(camera, picture, world.build(), 50);
-    raytracer.render().save("output/book3/image13.png");
+    raytracer.render().save("output/book3/image14.png");
 }
 
 fn cornell_smoke() {
