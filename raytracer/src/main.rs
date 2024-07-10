@@ -1,6 +1,6 @@
 use rand::Rng;
-use raytracer::bvh::{HittableTreeBuilder, ShapeTreeBuilder};
 
+use raytracer::bvh::{HittableList, ShapeList};
 use raytracer::camera::{Camera, ImageParam, LensParam, PerspectiveParam};
 use raytracer::color::{BlendMode, Color};
 use raytracer::hittable::Object;
@@ -177,7 +177,7 @@ fn create_cube_rotated_smoke(
 }
 
 fn bouncing_spheres() {
-    let mut hittable_list = HittableTreeBuilder::default();
+    let mut hittable_list = HittableList::default();
     hittable_list.push(create_lambertian_checker(
         Vec3::new(0.0, -1000.0, 0.0),
         1000.0,
@@ -248,7 +248,7 @@ fn bouncing_spheres() {
     let raytracer = RayTracer::new(
         camera,
         picture,
-        hittable_list.build(),
+        hittable_list.tree(),
         50,
         Color::new(0.7, 0.8, 1.0),
     );
@@ -256,7 +256,7 @@ fn bouncing_spheres() {
 }
 
 fn checkered_spheres() {
-    let mut hittable_list = HittableTreeBuilder::default();
+    let mut hittable_list = HittableList::default();
     hittable_list.push(create_lambertian_checker(Vec3::new(0.0, -10.0, 0.0), 10.0));
     hittable_list.push(create_lambertian_checker(Vec3::new(0.0, 10.0, 0.0), 10.0));
 
@@ -283,7 +283,7 @@ fn checkered_spheres() {
     let raytracer = RayTracer::new(
         camera,
         picture,
-        hittable_list.build(),
+        hittable_list.tree(),
         50,
         Color::new(0.7, 0.8, 1.0),
     );
@@ -291,7 +291,7 @@ fn checkered_spheres() {
 }
 
 fn earth() {
-    let mut hittable_list = HittableTreeBuilder::default();
+    let mut hittable_list = HittableList::default();
     hittable_list.push(create_lambertian_texture(
         Vec3::new(0.0, 0.0, 0.0),
         2.0,
@@ -321,7 +321,7 @@ fn earth() {
     let raytracer = RayTracer::new(
         camera,
         picture,
-        hittable_list.build(),
+        hittable_list.tree(),
         50,
         Color::new(0.7, 0.8, 1.0),
     );
@@ -329,7 +329,7 @@ fn earth() {
 }
 
 fn noise_spheres() {
-    let mut hittable_list = HittableTreeBuilder::default();
+    let mut hittable_list = HittableList::default();
     hittable_list.push(create_lambertian_noise(
         Vec3::new(0.0, -1000.0, 0.0),
         1000.0,
@@ -360,7 +360,7 @@ fn noise_spheres() {
     let raytracer = RayTracer::new(
         camera,
         picture,
-        hittable_list.build(),
+        hittable_list.tree(),
         50,
         Color::new(0.7, 0.8, 1.0),
     );
@@ -368,7 +368,7 @@ fn noise_spheres() {
 }
 
 fn quads() {
-    let mut hittable_list = HittableTreeBuilder::default();
+    let mut hittable_list = HittableList::default();
     hittable_list.push(create_quad(
         Vec3::new(-3.0, -2.0, 5.0),
         Vec3::new(0.0, 0.0, -4.0),
@@ -423,7 +423,7 @@ fn quads() {
     let raytracer = RayTracer::new(
         camera,
         picture,
-        hittable_list.build(),
+        hittable_list.tree(),
         50,
         Color::new(0.7, 0.8, 1.0),
     );
@@ -431,7 +431,7 @@ fn quads() {
 }
 
 fn simple_light() {
-    let mut hittable_list = HittableTreeBuilder::default();
+    let mut hittable_list = HittableList::default();
     hittable_list.push(create_lambertian_noise(
         Vec3::new(0.0, -1000.0, 0.0),
         1000.0,
@@ -470,12 +470,12 @@ fn simple_light() {
         },
     );
     let picture = raytracer::canvas::Canvas::empty(image_width, image_height);
-    let raytracer = RayTracer::new(camera, picture, hittable_list.build(), 50, Color::BLACK);
+    let raytracer = RayTracer::new(camera, picture, hittable_list.tree(), 50, Color::BLACK);
     raytracer.render().save("output/book2/image18.png");
 }
 
 fn cornell_box() {
-    let mut hittable_list = HittableTreeBuilder::default();
+    let mut hittable_list = HittableList::default();
     hittable_list.push(create_quad(
         Vec3::new(555.0, 0.0, 0.0),
         Vec3::new(0.0, 555.0, 0.0),
@@ -545,12 +545,12 @@ fn cornell_box() {
         },
     );
     let picture = raytracer::canvas::Canvas::empty(image_width, image_height);
-    let raytracer = RayTracer::new(camera, picture, hittable_list.build(), 50, Color::BLACK);
+    let raytracer = RayTracer::new(camera, picture, hittable_list.tree(), 50, Color::BLACK);
     raytracer.render().save("output/book3/image3.png");
 }
 
 fn cornell_smoke() {
-    let mut hittable_list = HittableTreeBuilder::default();
+    let mut hittable_list = HittableList::default();
     hittable_list.push(create_quad(
         Vec3::new(555.0, 0.0, 0.0),
         Vec3::new(0.0, 555.0, 0.0),
@@ -620,15 +620,15 @@ fn cornell_smoke() {
         },
     );
     let picture = raytracer::canvas::Canvas::empty(image_width, image_height);
-    let raytracer = RayTracer::new(camera, picture, hittable_list.build(), 50, Color::BLACK);
+    let raytracer = RayTracer::new(camera, picture, hittable_list.tree(), 50, Color::BLACK);
     raytracer.render().save("output/book2/image22.png");
 }
 
 fn final_scene(image_width: u32, sample_per_pixel: u32, max_depth: u32) {
-    let mut world = HittableTreeBuilder::default();
+    let mut world = HittableList::default();
     let mut rng = rand::thread_rng();
 
-    let mut box1 = HittableTreeBuilder::default();
+    let mut box1 = HittableList::default();
     let boxes_per_side = 20;
     for i in 0..boxes_per_side {
         for j in 0..boxes_per_side {
@@ -646,7 +646,7 @@ fn final_scene(image_width: u32, sample_per_pixel: u32, max_depth: u32) {
             ));
         }
     }
-    world.push(box1.build());
+    world.push(box1.tree());
 
     world.push(create_quad_light(
         Vec3::new(123.0, 554.0, 147.0),
@@ -692,12 +692,12 @@ fn final_scene(image_width: u32, sample_per_pixel: u32, max_depth: u32) {
     ));
 
     let ns = 1000;
-    let mut spheres = ShapeTreeBuilder::default();
+    let mut spheres = ShapeList::default();
     for _ in 0..ns {
         spheres.push(Sphere::new(Vec3::random(0.0, 165.0), 10.0));
     }
-    let mut spheres = spheres.build();
-    spheres.transform(Transform::rotate_y(15.0.to_radians()));
+    let mut spheres = spheres.tree();
+    spheres.transform(Transform::rotate_y(15.0f64.to_radians()));
     spheres.transform(Transform::translate(Vec3::new(-100.0, 270.0, 395.0)));
     world.push(Object::new(
         spheres,
@@ -723,7 +723,7 @@ fn final_scene(image_width: u32, sample_per_pixel: u32, max_depth: u32) {
         },
     );
     let picture = raytracer::canvas::Canvas::empty(image_width, image_height);
-    let raytracer = RayTracer::new(camera, picture, world.build(), max_depth, Color::BLACK);
+    let raytracer = RayTracer::new(camera, picture, world.tree(), max_depth, Color::BLACK);
     raytracer.render().save("output/book2/image23.png");
 }
 

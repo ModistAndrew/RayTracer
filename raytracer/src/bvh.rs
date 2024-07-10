@@ -64,17 +64,35 @@ impl Hittable for HittableTree {
 }
 
 #[derive(Default)]
-pub struct HittableTreeBuilder {
+pub struct HittableList {
     hittable_list: Vec<Box<dyn Hittable>>,
 }
 
-impl HittableTreeBuilder {
+impl HittableList {
     pub fn push<T: Hittable + 'static>(&mut self, hittable: T) {
         self.hittable_list.push(Box::new(hittable));
     }
 
-    pub fn build(self) -> HittableTree {
+    pub fn tree(self) -> HittableTree {
         HittableTree::new(self.hittable_list)
+    }
+}
+
+impl Hittable for HittableList {
+    fn hit(&self, hit_record: &mut HitRecord) -> HitResult {
+        let mut hit_result = HitResult::Miss;
+        for hittable in &self.hittable_list {
+            hit_result = HitResult::last_not_miss(hit_result, hittable.hit(hit_record));
+        }
+        hit_result
+    }
+
+    fn aabb(&self) -> AABB {
+        let mut aabb = AABB::default();
+        for shape in &self.hittable_list {
+            aabb = aabb.union(shape.aabb());
+        }
+        aabb
     }
 }
 
@@ -126,7 +144,8 @@ impl Shape for ShapeTree {
         if !self.aabb.hit(&hit_record.ray) {
             return false;
         }
-        self.left.hit(hit_record) || self.right.hit(hit_record)
+        // note that we don't short-circuit here, because both children need to be hit
+        self.left.hit(hit_record) | self.right.hit(hit_record)
     }
 
     fn transform(&mut self, matrix: Transform) {
@@ -141,16 +160,40 @@ impl Shape for ShapeTree {
 }
 
 #[derive(Default)]
-pub struct ShapeTreeBuilder {
+pub struct ShapeList {
     shape_list: Vec<Box<dyn Shape>>,
 }
 
-impl ShapeTreeBuilder {
+impl ShapeList {
     pub fn push<T: Shape + 'static>(&mut self, shape: T) {
         self.shape_list.push(Box::new(shape));
     }
 
-    pub fn build(self) -> ShapeTree {
+    pub fn tree(self) -> ShapeTree {
         ShapeTree::new(self.shape_list)
+    }
+}
+
+impl Shape for ShapeList {
+    fn hit(&self, hit_record: &mut HitRecord) -> bool {
+        let mut hit = false;
+        for shape in &self.shape_list {
+            hit |= shape.hit(hit_record);
+        }
+        hit
+    }
+
+    fn transform(&mut self, matrix: Transform) {
+        for shape in &mut self.shape_list {
+            shape.transform(matrix);
+        }
+    }
+
+    fn aabb(&self) -> AABB {
+        let mut aabb = AABB::default();
+        for shape in &self.shape_list {
+            aabb = aabb.union(shape.aabb());
+        }
+        aabb
     }
 }

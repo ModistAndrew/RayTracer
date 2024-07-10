@@ -1,11 +1,13 @@
+use std::f64::consts::PI;
+
 use crate::aabb::AABB;
+use crate::bvh::ShapeList;
 use crate::hittable::HitRecord;
 use crate::interval::Interval;
 use crate::ray::Ray;
 use crate::texture::UV;
 use crate::transform::Transform;
 use crate::vec3::Vec3;
-use std::f64::consts::PI;
 
 pub trait Shape: Sync + Send {
     // hit_record.ray is the original ray. may contain the former hit record.
@@ -137,7 +139,7 @@ impl Shape for Quad {
 }
 
 pub struct Cube {
-    quads: [Quad; 6],
+    quads: ShapeList,
 }
 
 impl Cube {
@@ -148,39 +150,52 @@ impl Cube {
         let dx = Vec3::new(aabb.x.length(), 0.0, 0.0);
         let dy = Vec3::new(0.0, aabb.y.length(), 0.0);
         let dz = Vec3::new(0.0, 0.0, aabb.z.length());
-        let quads = [
-            Quad::new(Vec3::new(min_pos.x, min_pos.y, max_pos.z), dx, dy),
-            Quad::new(Vec3::new(max_pos.x, min_pos.y, max_pos.z), -dz, dy),
-            Quad::new(Vec3::new(max_pos.x, min_pos.y, min_pos.z), -dx, dy),
-            Quad::new(Vec3::new(min_pos.x, min_pos.y, min_pos.z), dz, dy),
-            Quad::new(Vec3::new(min_pos.x, max_pos.y, max_pos.z), dx, -dz),
-            Quad::new(Vec3::new(min_pos.x, min_pos.y, min_pos.z), dx, dz),
-        ];
+        let mut quads = ShapeList::default();
+        quads.push(Quad::new(
+            Vec3::new(min_pos.x, min_pos.y, max_pos.z),
+            dx,
+            dy,
+        ));
+        quads.push(Quad::new(
+            Vec3::new(max_pos.x, min_pos.y, max_pos.z),
+            -dz,
+            dy,
+        ));
+        quads.push(Quad::new(
+            Vec3::new(max_pos.x, min_pos.y, min_pos.z),
+            -dx,
+            dy,
+        ));
+        quads.push(Quad::new(
+            Vec3::new(min_pos.x, min_pos.y, min_pos.z),
+            dz,
+            dy,
+        ));
+        quads.push(Quad::new(
+            Vec3::new(min_pos.x, max_pos.y, max_pos.z),
+            dx,
+            -dz,
+        ));
+        quads.push(Quad::new(
+            Vec3::new(min_pos.x, min_pos.y, min_pos.z),
+            dx,
+            dz,
+        ));
         Self { quads }
     }
 }
 
 impl Shape for Cube {
     fn hit(&self, hit_record: &mut HitRecord) -> bool {
-        let mut hit = false;
-        for quad in &self.quads {
-            hit |= quad.hit(hit_record);
-        }
-        hit
+        self.quads.hit(hit_record)
     }
 
     fn transform(&mut self, matrix: Transform) {
-        for quad in &mut self.quads {
-            quad.transform(matrix);
-        }
+        self.quads.transform(matrix);
     }
 
     fn aabb(&self) -> AABB {
-        let mut aabb = AABB::default();
-        for quad in &self.quads {
-            aabb = aabb.union(quad.aabb());
-        }
-        aabb
+        self.quads.aabb()
     }
 }
 

@@ -1,7 +1,6 @@
 use std::sync::{Arc, Mutex};
 use std::thread;
 
-use crate::bvh::HittableTree;
 use indicatif::ProgressBar;
 
 use crate::camera::Camera;
@@ -13,23 +12,23 @@ use crate::ray::Ray;
 pub struct RayTracer {
     camera: Camera,
     canvas: Canvas,
-    world: HittableTree, // Arc is used to share the world between threads
+    world: Box<dyn Hittable>,
     max_depth: u32,
     background: Color,
 }
 
 impl RayTracer {
-    pub fn new(
+    pub fn new<T: Hittable + 'static>(
         camera: Camera,
         canvas: Canvas,
-        world: HittableTree,
+        world: T,
         max_depth: u32,
         background: Color,
     ) -> Self {
         Self {
             camera,
             canvas,
-            world,
+            world: Box::new(world),
             max_depth,
             background,
         }
