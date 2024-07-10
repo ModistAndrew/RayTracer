@@ -2,7 +2,7 @@ use crate::aabb::AABB;
 use crate::bvh::HittableTree;
 use crate::color::Color;
 use crate::material::Material;
-use crate::pdf::{mixture_generate_with_prob, ShapePDF, UniformPDF, PDF};
+use crate::pdf::{ShapePDF, UniformPDF, PDF};
 use crate::ray::Ray;
 use crate::shape::{Shape, ShapePDFProvider};
 use crate::texture::UV;
@@ -122,7 +122,14 @@ impl HitRecord {
         let (v, value) = if custom_pdf.empty() {
             self.get_scatter_pdf().generate_with_prob()
         } else {
-            mixture_generate_with_prob(custom_pdf, self.get_scatter_pdf())
+            let origin = self.get_hit().position;
+            let v = if rand::random::<f64>() < 0.5 {
+                self.get_scatter_pdf().generate()
+            } else {
+                custom_pdf.generate(origin)
+            };
+            let value = 0.5 * self.get_scatter_pdf().prob(v) + 0.5 * custom_pdf.prob(origin, v);
+            (v, value)
         };
         (
             self.ray.new_ray(self.get_hit().position, v),

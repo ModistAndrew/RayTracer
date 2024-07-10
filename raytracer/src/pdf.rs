@@ -16,23 +16,6 @@ pub trait PDF: Debug {
     }
 }
 
-pub fn mixture_generate(p1: &dyn PDF, p2: &dyn PDF) -> Vec3 {
-    if rand::random::<f64>() < 0.5 {
-        p1.generate()
-    } else {
-        p2.generate()
-    }
-}
-
-pub fn mixture_prob(p1: &dyn PDF, p2: &dyn PDF, direction: Vec3) -> f64 {
-    0.5 * p1.prob(direction) + 0.5 * p2.prob(direction)
-}
-
-pub fn mixture_generate_with_prob(p1: &dyn PDF, p2: &dyn PDF) -> (Vec3, f64) {
-    let v = mixture_generate(p1, p2);
-    (v, mixture_prob(p1, p2, v))
-}
-
 #[derive(Debug)]
 pub struct CosinePDF {
     uvw: ONB,
@@ -71,7 +54,6 @@ impl PDF for UniformPDF {
 #[derive(Debug, Default)]
 pub struct ShapePDF {
     pdfs: Vec<Box<dyn ShapePDFProvider>>, // shouldn't be empty
-    origin: Vec3,
 }
 
 impl ShapePDF {
@@ -79,30 +61,24 @@ impl ShapePDF {
         self.pdfs.push(Box::new(pdf));
     }
 
-    pub fn set_origin(&mut self, origin: Vec3) {
-        self.origin = origin;
-    }
-
     pub fn empty(&self) -> bool {
         // special check for empty
         self.pdfs.is_empty()
     }
-}
 
-impl PDF for ShapePDF {
-    fn prob(&self, direction: Vec3) -> f64 {
+    pub fn prob(&self, direction: Vec3, origin: Vec3) -> f64 {
         let weight = 1.0 / self.pdfs.len() as f64;
         let mut sum = 0.0;
         for pdf in &self.pdfs {
-            sum += weight * pdf.prob(self.origin, direction);
+            sum += weight * pdf.prob(origin, direction);
         }
         sum
     }
 
-    fn generate(&self) -> Vec3 {
+    pub fn generate(&self, origin: Vec3) -> Vec3 {
         self.pdfs
             .choose(&mut rand::thread_rng())
             .unwrap()
-            .generate(self.origin)
+            .generate(origin)
     }
 }
