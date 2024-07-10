@@ -489,7 +489,7 @@ fn cornell_box() {
     ));
     world.add_object(create_cube_rotated_metal(
         Vec3::new(165.0, 330.0, 165.0),
-        Color::new(0.73, 0.73, 0.73),
+        Color::new(0.8, 0.85, 0.88),
         Vec3::new(265.0, 0.0, 295.0),
         15.0,
     ));
