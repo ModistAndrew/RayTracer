@@ -1,5 +1,5 @@
 use crate::hittable::HitRecord;
-use crate::pdf::{CosineHemisphere, UniformSphere};
+use crate::pdf::{UniformHemisphere, UniformSphere};
 use crate::vec3::Vec3;
 
 pub trait Material: Sync + Send {
@@ -13,7 +13,7 @@ pub struct Lambertian;
 
 impl Material for Lambertian {
     fn scatter(&self, hit_record: &mut HitRecord) {
-        hit_record.set_scatter_pdf(CosineHemisphere::new(hit_record.get_hit().normal));
+        hit_record.set_scatter_pdf(UniformHemisphere::new(hit_record.get_hit().normal));
     }
 }
 
