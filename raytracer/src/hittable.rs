@@ -118,6 +118,7 @@ impl HitRecord {
 
     // generate a new ray from the shape pdf mixed with the scatter pdf
     // return (new_ray, prob_of_mixture_pdf, prob_of_scatter_pdf)
+    // if shape pdf is empty, use scatter pdf only
     pub fn generate_scatter(&self, shape_pdf: &ShapePDF) -> (Ray, f64, f64) {
         let origin = self.get_hit().position;
         let v = if shape_pdf.empty() || rand::random::<f64>() < 0.5 {

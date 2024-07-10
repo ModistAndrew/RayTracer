@@ -484,11 +484,6 @@ fn cornell_box() {
         Vec3::new(130.0, 0.0, 65.0),
         -18.0,
     ));
-    world.add_light(Quad::new(
-        Vec3::new(343.0, 554.0, 332.0),
-        Vec3::new(-130.0, 0.0, 0.0),
-        Vec3::new(0.0, 0.0, -105.0),
-    ));
 
     let image_width = 600;
     let image_height = 600;
@@ -506,7 +501,7 @@ fn cornell_box() {
         ImageParam {
             image_width,
             image_height,
-            sample_per_pixel: 10,
+            sample_per_pixel: 100,
         },
     );
     let picture = raytracer::canvas::Canvas::empty(image_width, image_height);
