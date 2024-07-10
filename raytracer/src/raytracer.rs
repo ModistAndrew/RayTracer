@@ -6,32 +6,23 @@ use indicatif::ProgressBar;
 use crate::camera::Camera;
 use crate::canvas::Canvas;
 use crate::color::{BlendMode, Color};
-use crate::hittable::{HitRecord, HitResult, Hittable};
-use crate::pdf::SpherePDF;
+use crate::hittable::{HitRecord, HitResult, Hittable, World};
 use crate::ray::Ray;
 
 pub struct RayTracer {
     camera: Camera,
     canvas: Canvas,
-    world: Box<dyn Hittable>,
+    world: World,
     max_depth: u32,
-    background: Color,
 }
 
 impl RayTracer {
-    pub fn new<T: Hittable + 'static>(
-        camera: Camera,
-        canvas: Canvas,
-        world: T,
-        max_depth: u32,
-        background: Color,
-    ) -> Self {
+    pub fn new(camera: Camera, canvas: Canvas, world: World, max_depth: u32) -> Self {
         Self {
             camera,
             canvas,
-            world: Box::new(world),
+            world,
             max_depth,
-            background,
         }
     }
 
@@ -40,8 +31,8 @@ impl RayTracer {
             return Color::BLACK;
         }
         let mut hit_record = HitRecord::new(ray);
-        match self.world.hit(&mut hit_record) {
-            HitResult::Miss => self.background,
+        match self.world.objects.hit(&mut hit_record) {
+            HitResult::Miss => self.world.background,
             HitResult::Absorb => hit_record.get_scatter().emission,
             HitResult::Scatter => {
                 let emission = hit_record.get_scatter().emission;
@@ -52,7 +43,7 @@ impl RayTracer {
                         .blend(emission, BlendMode::Add)
                 } else {
                     let (scatter, mixture_prob, scatter_prob) =
-                        hit_record.generate_scatter(SpherePDF);
+                        hit_record.generate_scatter(&self.world.pdf);
                     self.raytrace(scatter, left_depth - 1)
                         .blend(attenuation, BlendMode::Mul)
                         .lighten(scatter_prob / mixture_prob)

@@ -1,9 +1,11 @@
 use std::f64::consts::PI;
+use std::fmt::Debug;
 
 use crate::aabb::AABB;
 use crate::bvh::ShapeList;
 use crate::hittable::HitRecord;
 use crate::interval::Interval;
+use crate::onb::ONB;
 use crate::ray::Ray;
 use crate::texture::UV;
 use crate::transform::Transform;
@@ -13,13 +15,23 @@ pub trait Shape: Sync + Send {
     // hit_record.ray is the original ray. may contain the former hit record.
     // if hit, update hit_record.hit and ray and return true
     fn hit(&self, hit_record: &mut HitRecord) -> bool;
+
     // should return a new shape transformed by the matrix. you may call aabb() on the new shape to get the new bounding box.
-    // may not be able to handle all transformations
+    // may not be able to handle all transformations.
+    // remember to update member variables
     fn transform(&mut self, matrix: Transform);
+
     // return the bounding box for hit testing. only called once for construction
     fn aabb(&self) -> AABB;
 }
 
+pub trait ShapePDFProvider: Sync + Send + Debug {
+    // similar to PDF but we specify the origin
+    fn prob(&self, origin: Vec3, direction: Vec3) -> f64;
+    fn generate(&self, origin: Vec3) -> Vec3;
+}
+
+#[derive(Debug)]
 pub struct Sphere {
     center: Vec3,
     radius: f64,
@@ -75,6 +87,28 @@ impl Shape for Sphere {
     }
 }
 
+impl ShapePDFProvider for Sphere {
+    fn prob(&self, origin: Vec3, direction: Vec3) -> f64 {
+        let ray = Ray::new(origin, direction, 0.0, Interval::UNIVERSE);
+        let mut hit_record = HitRecord::new(ray);
+        if !self.hit(&mut hit_record) {
+            return 0.0;
+        }
+        let cos_theta_max =
+            (1.0 - self.radius * self.radius / (self.center - origin).length_squared()).sqrt();
+        let solid_angle = 2.0 * PI * (1.0 - cos_theta_max);
+        1.0 / solid_angle
+    }
+
+    fn generate(&self, origin: Vec3) -> Vec3 {
+        let direction = self.center - origin;
+        let distance_squared = direction.length_squared();
+        let uvw = ONB::normal(direction);
+        uvw.local(Vec3::random_to_sphere(self.radius, distance_squared))
+    }
+}
+
+#[derive(Debug)]
 pub struct Quad {
     q: Vec3,
     u: Vec3,
@@ -82,6 +116,7 @@ pub struct Quad {
     w: Vec3,
     normal: Vec3,
     d: f64,
+    area: f64,
 }
 
 impl Quad {
@@ -90,6 +125,7 @@ impl Quad {
         let normal = n.normalize();
         let d = normal.dot(q);
         let w = n / n.length_squared();
+        let area = n.length();
         Self {
             q,
             u,
@@ -97,6 +133,7 @@ impl Quad {
             w,
             normal,
             d,
+            area,
         }
     }
 }
@@ -128,6 +165,7 @@ impl Shape for Quad {
         self.normal = n.normalize();
         self.d = self.normal.dot(self.q);
         self.w = n / n.length_squared();
+        self.area = n.length();
     }
 
     fn aabb(&self) -> AABB {
@@ -138,12 +176,26 @@ impl Shape for Quad {
     }
 }
 
-pub struct Cube {
-    quads: ShapeList,
+impl ShapePDFProvider for Quad {
+    fn prob(&self, origin: Vec3, direction: Vec3) -> f64 {
+        let ray = Ray::new(origin, direction, 0.0, Interval::UNIVERSE);
+        let mut hit_record = HitRecord::new(ray);
+        if !self.hit(&mut hit_record) {
+            return 0.0;
+        }
+        let hit = hit_record.get_hit();
+        let distance_squared = hit.t * hit.t * direction.length_squared();
+        let cosine = -direction.dot(hit.normal) / direction.length();
+        distance_squared / (cosine * self.area)
+    }
+
+    fn generate(&self, origin: Vec3) -> Vec3 {
+        (self.q + self.u * rand::random::<f64>() + self.v * rand::random::<f64>()) - origin
+    }
 }
 
-impl Cube {
-    pub fn new(a: Vec3, b: Vec3) -> Self {
+impl ShapeList {
+    pub fn cube(a: Vec3, b: Vec3) -> ShapeList {
         let aabb = AABB::from_vec3(a, b);
         let min_pos = aabb.min_pos();
         let max_pos = aabb.max_pos();
@@ -181,21 +233,7 @@ impl Cube {
             dx,
             dz,
         ));
-        Self { quads }
-    }
-}
-
-impl Shape for Cube {
-    fn hit(&self, hit_record: &mut HitRecord) -> bool {
-        self.quads.hit(hit_record)
-    }
-
-    fn transform(&mut self, matrix: Transform) {
-        self.quads.transform(matrix);
-    }
-
-    fn aabb(&self) -> AABB {
-        self.quads.aabb()
+        quads
     }
 }
 

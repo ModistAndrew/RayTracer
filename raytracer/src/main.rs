@@ -1,13 +1,13 @@
 use rand::Rng;
 
-use raytracer::bvh::{HittableList, ShapeList};
+use raytracer::bvh::ShapeList;
 use raytracer::camera::{Camera, ImageParam, LensParam, PerspectiveParam};
 use raytracer::color::{BlendMode, Color};
-use raytracer::hittable::Object;
+use raytracer::hittable::{Object, WorldBuilder};
 use raytracer::material::{Dielectric, Isotropic, Lambertian, Metal};
 use raytracer::noise::Noise;
 use raytracer::raytracer::RayTracer;
-use raytracer::shape::{ConstantMedium, Cube, Moving, Quad, Shape, Sphere};
+use raytracer::shape::{ConstantMedium, Moving, Quad, Shape, Sphere};
 use raytracer::texture::{
     CheckerTexture, Emissive, ImageTexture, NoiseTexture, SolidColor, TexturedMaterial,
 };
@@ -135,24 +135,13 @@ fn create_quad_light(
     Object::new(Quad::new(q, u, v), Emissive::new(SolidColor::new(light)))
 }
 
-fn create_cube(
-    a: Vec3,
-    b: Vec3,
-    albedo: Color,
-) -> Object<Cube, TexturedMaterial<SolidColor, Lambertian>> {
-    Object::new(
-        Cube::new(a, b),
-        TexturedMaterial::new(SolidColor::new(albedo), Lambertian),
-    )
-}
-
 fn create_cube_rotated(
     a: Vec3,
     albedo: Color,
     translate: Vec3,
     angle: f64,
-) -> Object<Cube, TexturedMaterial<SolidColor, Lambertian>> {
-    let mut cube = Cube::new(Vec3::default(), a);
+) -> Object<ShapeList, TexturedMaterial<SolidColor, Lambertian>> {
+    let mut cube = ShapeList::cube(Vec3::default(), a);
     cube.transform(Transform::rotate_y(angle.to_radians()));
     cube.transform(Transform::translate(translate));
     Object::new(
@@ -166,8 +155,8 @@ fn create_cube_rotated_smoke(
     albedo: Color,
     translate: Vec3,
     angle: f64,
-) -> Object<ConstantMedium<Cube>, TexturedMaterial<SolidColor, Isotropic>> {
-    let mut cube = Cube::new(Vec3::default(), a);
+) -> Object<ConstantMedium<ShapeList>, TexturedMaterial<SolidColor, Isotropic>> {
+    let mut cube = ShapeList::cube(Vec3::default(), a);
     cube.transform(Transform::rotate_y(angle.to_radians()));
     cube.transform(Transform::translate(translate));
     Object::new(
@@ -177,8 +166,8 @@ fn create_cube_rotated_smoke(
 }
 
 fn bouncing_spheres() {
-    let mut hittable_list = HittableList::default();
-    hittable_list.push(create_lambertian_checker(
+    let mut world = WorldBuilder::default();
+    world.add_object(create_lambertian_checker(
         Vec3::new(0.0, -1000.0, 0.0),
         1000.0,
     ));
@@ -193,32 +182,32 @@ fn bouncing_spheres() {
             );
             if (center - Vec3::new(4.0, 0.2, 0.0)).length() > 0.9 {
                 if choose_mat < 0.8 {
-                    hittable_list.push(create_lambertian_moving(
+                    world.add_object(create_lambertian_moving(
                         center,
                         0.2,
                         Color::random(0.0, 1.0).blend(Color::random(0.0, 1.0), BlendMode::Mul),
                         Vec3::new(0.0, rng.gen_range(0.0..0.5), 0.0),
                     ));
                 } else if choose_mat < 0.95 {
-                    hittable_list.push(create_metal(
+                    world.add_object(create_metal(
                         center,
                         0.2,
                         Color::random(0.5, 1.0),
                         rng.gen_range(0.0..0.5),
                     ));
                 } else {
-                    hittable_list.push(create_dielectric(center, 0.2, 1.5));
+                    world.add_object(create_dielectric(center, 0.2, 1.5));
                 }
             }
         }
     }
-    hittable_list.push(create_dielectric(Vec3::new(0.0, 1.0, 0.0), 1.0, 1.5));
-    hittable_list.push(create_lambertian(
+    world.add_object(create_dielectric(Vec3::new(0.0, 1.0, 0.0), 1.0, 1.5));
+    world.add_object(create_lambertian(
         Vec3::new(-4.0, 1.0, 0.0),
         1.0,
         Color::new(0.4, 0.2, 0.1),
     ));
-    hittable_list.push(create_metal(
+    world.add_object(create_metal(
         Vec3::new(4.0, 1.0, 0.0),
         1.0,
         Color::new(0.7, 0.6, 0.5),
@@ -245,20 +234,14 @@ fn bouncing_spheres() {
         },
     );
     let picture = raytracer::canvas::Canvas::empty(image_width, image_height);
-    let raytracer = RayTracer::new(
-        camera,
-        picture,
-        hittable_list.tree(),
-        50,
-        Color::new(0.7, 0.8, 1.0),
-    );
+    let raytracer = RayTracer::new(camera, picture, world.build(), 50);
     raytracer.render().save("output/book2/image2.png");
 }
 
 fn checkered_spheres() {
-    let mut hittable_list = HittableList::default();
-    hittable_list.push(create_lambertian_checker(Vec3::new(0.0, -10.0, 0.0), 10.0));
-    hittable_list.push(create_lambertian_checker(Vec3::new(0.0, 10.0, 0.0), 10.0));
+    let mut world = WorldBuilder::default();
+    world.add_object(create_lambertian_checker(Vec3::new(0.0, -10.0, 0.0), 10.0));
+    world.add_object(create_lambertian_checker(Vec3::new(0.0, 10.0, 0.0), 10.0));
 
     let image_width = 400;
     let image_height = 225;
@@ -280,19 +263,13 @@ fn checkered_spheres() {
         },
     );
     let picture = raytracer::canvas::Canvas::empty(image_width, image_height);
-    let raytracer = RayTracer::new(
-        camera,
-        picture,
-        hittable_list.tree(),
-        50,
-        Color::new(0.7, 0.8, 1.0),
-    );
+    let raytracer = RayTracer::new(camera, picture, world.build(), 50);
     raytracer.render().save("output/book2/image3.png");
 }
 
 fn earth() {
-    let mut hittable_list = HittableList::default();
-    hittable_list.push(create_lambertian_texture(
+    let mut world = WorldBuilder::default();
+    world.add_object(create_lambertian_texture(
         Vec3::new(0.0, 0.0, 0.0),
         2.0,
         "assets/earth_map.jpg",
@@ -318,24 +295,18 @@ fn earth() {
         },
     );
     let picture = raytracer::canvas::Canvas::empty(image_width, image_height);
-    let raytracer = RayTracer::new(
-        camera,
-        picture,
-        hittable_list.tree(),
-        50,
-        Color::new(0.7, 0.8, 1.0),
-    );
+    let raytracer = RayTracer::new(camera, picture, world.build(), 50);
     raytracer.render().save("output/book2/image5.png");
 }
 
 fn noise_spheres() {
-    let mut hittable_list = HittableList::default();
-    hittable_list.push(create_lambertian_noise(
+    let mut world = WorldBuilder::default();
+    world.add_object(create_lambertian_noise(
         Vec3::new(0.0, -1000.0, 0.0),
         1000.0,
         4.0,
     ));
-    hittable_list.push(create_lambertian_noise(Vec3::new(0.0, 2.0, 0.0), 2.0, 4.0));
+    world.add_object(create_lambertian_noise(Vec3::new(0.0, 2.0, 0.0), 2.0, 4.0));
 
     let image_width = 400;
     let image_height = 225;
@@ -357,43 +328,37 @@ fn noise_spheres() {
         },
     );
     let picture = raytracer::canvas::Canvas::empty(image_width, image_height);
-    let raytracer = RayTracer::new(
-        camera,
-        picture,
-        hittable_list.tree(),
-        50,
-        Color::new(0.7, 0.8, 1.0),
-    );
+    let raytracer = RayTracer::new(camera, picture, world.build(), 50);
     raytracer.render().save("output/book2/image15.png");
 }
 
 fn quads() {
-    let mut hittable_list = HittableList::default();
-    hittable_list.push(create_quad(
+    let mut world = WorldBuilder::default();
+    world.add_object(create_quad(
         Vec3::new(-3.0, -2.0, 5.0),
         Vec3::new(0.0, 0.0, -4.0),
         Vec3::new(0.0, 4.0, 0.0),
         Color::new(1.0, 0.2, 0.2),
     ));
-    hittable_list.push(create_quad(
+    world.add_object(create_quad(
         Vec3::new(-2.0, -2.0, 0.0),
         Vec3::new(4.0, 0.0, 0.0),
         Vec3::new(0.0, 4.0, 0.0),
         Color::new(0.2, 1.0, 0.2),
     ));
-    hittable_list.push(create_quad(
+    world.add_object(create_quad(
         Vec3::new(3.0, -2.0, 1.0),
         Vec3::new(0.0, 0.0, 4.0),
         Vec3::new(0.0, 4.0, 0.0),
         Color::new(0.2, 0.2, 1.0),
     ));
-    hittable_list.push(create_quad(
+    world.add_object(create_quad(
         Vec3::new(-2.0, 3.0, 1.0),
         Vec3::new(4.0, 0.0, 0.0),
         Vec3::new(0.0, 0.0, 4.0),
         Color::new(1.0, 0.5, 0.0),
     ));
-    hittable_list.push(create_quad(
+    world.add_object(create_quad(
         Vec3::new(-2.0, -3.0, 5.0),
         Vec3::new(4.0, 0.0, 0.0),
         Vec3::new(0.0, 0.0, -4.0),
@@ -420,31 +385,25 @@ fn quads() {
         },
     );
     let picture = raytracer::canvas::Canvas::empty(image_width, image_height);
-    let raytracer = RayTracer::new(
-        camera,
-        picture,
-        hittable_list.tree(),
-        50,
-        Color::new(0.7, 0.8, 1.0),
-    );
+    let raytracer = RayTracer::new(camera, picture, world.build(), 50);
     raytracer.render().save("output/book2/image16.png");
 }
 
 fn simple_light() {
-    let mut hittable_list = HittableList::default();
-    hittable_list.push(create_lambertian_noise(
+    let mut world = WorldBuilder::default();
+    world.add_object(create_lambertian_noise(
         Vec3::new(0.0, -1000.0, 0.0),
         1000.0,
         4.0,
     ));
-    hittable_list.push(create_lambertian_noise(Vec3::new(0.0, 2.0, 0.0), 2.0, 4.0));
-    hittable_list.push(create_quad_light(
+    world.add_object(create_lambertian_noise(Vec3::new(0.0, 2.0, 0.0), 2.0, 4.0));
+    world.add_object(create_quad_light(
         Vec3::new(3.0, 1.0, -2.0),
         Vec3::new(2.0, 0.0, 0.0),
         Vec3::new(0.0, 2.0, 0.0),
         Color::new(4.0, 4.0, 4.0),
     ));
-    hittable_list.push(create_light(
+    world.add_object(create_light(
         Vec3::new(0.0, 7.0, 0.0),
         2.0,
         Color::new(4.0, 4.0, 4.0),
@@ -469,61 +428,65 @@ fn simple_light() {
             sample_per_pixel: 100,
         },
     );
+
     let picture = raytracer::canvas::Canvas::empty(image_width, image_height);
-    let raytracer = RayTracer::new(camera, picture, hittable_list.tree(), 50, Color::BLACK);
+    let raytracer = RayTracer::new(camera, picture, world.build(), 50);
     raytracer.render().save("output/book2/image18.png");
 }
 
 fn cornell_box() {
-    let mut hittable_list = HittableList::default();
-    hittable_list.push(create_quad(
+    let mut world = WorldBuilder::default();
+    world.add_object(create_quad(
         Vec3::new(555.0, 0.0, 0.0),
         Vec3::new(0.0, 555.0, 0.0),
         Vec3::new(0.0, 0.0, 555.0),
         Color::new(0.12, 0.45, 0.15),
     ));
-    hittable_list.push(create_quad(
+    world.add_object(create_quad(
         Vec3::new(0.0, 0.0, 0.0),
         Vec3::new(0.0, 555.0, 0.0),
         Vec3::new(0.0, 0.0, 555.0),
         Color::new(0.65, 0.05, 0.05),
     ));
-    hittable_list.push(create_quad_light(
+    world.add_object(create_quad_light(
         Vec3::new(343.0, 554.0, 332.0),
         Vec3::new(-130.0, 0.0, 0.0),
         Vec3::new(0.0, 0.0, -105.0),
         Color::new(15.0, 15.0, 15.0),
     ));
-    hittable_list.push(create_quad(
+    world.add_object(create_quad(
         Vec3::new(0.0, 0.0, 0.0),
         Vec3::new(555.0, 0.0, 0.0),
         Vec3::new(0.0, 0.0, 555.0),
         Color::new(0.73, 0.73, 0.73),
     ));
-    hittable_list.push(create_quad(
+    world.add_object(create_quad(
         Vec3::new(555.0, 555.0, 555.0),
         Vec3::new(-555.0, 0.0, 0.0),
         Vec3::new(0.0, 0.0, -555.0),
         Color::new(0.73, 0.73, 0.73),
     ));
-    hittable_list.push(create_quad(
+    world.add_object(create_quad(
         Vec3::new(0.0, 0.0, 555.0),
         Vec3::new(555.0, 0.0, 0.0),
         Vec3::new(0.0, 555.0, 0.0),
         Color::new(0.73, 0.73, 0.73),
     ));
-    hittable_list.push(create_cube_rotated(
+    world.add_object(create_cube_rotated(
         Vec3::new(165.0, 330.0, 165.0),
         Color::new(0.73, 0.73, 0.73),
         Vec3::new(265.0, 0.0, 295.0),
         15.0,
     ));
-    hittable_list.push(create_cube_rotated(
+    world.add_object(create_cube_rotated(
         Vec3::new(165.0, 165.0, 165.0),
         Color::new(0.73, 0.73, 0.73),
         Vec3::new(130.0, 0.0, 65.0),
         -18.0,
     ));
+    world.add_light(Quad::new(Vec3::new(343.0, 554.0, 332.0),
+                              Vec3::new(-130.0, 0.0, 0.0),
+                              Vec3::new(0.0, 0.0, -105.0)));
 
     let image_width = 600;
     let image_height = 600;
@@ -541,59 +504,59 @@ fn cornell_box() {
         ImageParam {
             image_width,
             image_height,
-            sample_per_pixel: 200,
+            sample_per_pixel: 10,
         },
     );
     let picture = raytracer::canvas::Canvas::empty(image_width, image_height);
-    let raytracer = RayTracer::new(camera, picture, hittable_list.tree(), 50, Color::BLACK);
+    let raytracer = RayTracer::new(camera, picture, world.build(), 50);
     raytracer.render().save("output/book3/image3.png");
 }
 
 fn cornell_smoke() {
-    let mut hittable_list = HittableList::default();
-    hittable_list.push(create_quad(
+    let mut world = WorldBuilder::default();
+    world.add_object(create_quad(
         Vec3::new(555.0, 0.0, 0.0),
         Vec3::new(0.0, 555.0, 0.0),
         Vec3::new(0.0, 0.0, 555.0),
         Color::new(0.12, 0.45, 0.15),
     ));
-    hittable_list.push(create_quad(
+    world.add_object(create_quad(
         Vec3::new(0.0, 0.0, 0.0),
         Vec3::new(0.0, 555.0, 0.0),
         Vec3::new(0.0, 0.0, 555.0),
         Color::new(0.65, 0.05, 0.05),
     ));
-    hittable_list.push(create_quad_light(
+    world.add_object(create_quad_light(
         Vec3::new(113.0, 554.0, 127.0),
         Vec3::new(330.0, 0.0, 0.0),
         Vec3::new(0.0, 0.0, 305.0),
         Color::new(7.0, 7.0, 7.0),
     ));
-    hittable_list.push(create_quad(
+    world.add_object(create_quad(
         Vec3::new(0.0, 0.0, 0.0),
         Vec3::new(555.0, 0.0, 0.0),
         Vec3::new(0.0, 0.0, 555.0),
         Color::new(0.73, 0.73, 0.73),
     ));
-    hittable_list.push(create_quad(
+    world.add_object(create_quad(
         Vec3::new(555.0, 555.0, 555.0),
         Vec3::new(-555.0, 0.0, 0.0),
         Vec3::new(0.0, 0.0, -555.0),
         Color::new(0.73, 0.73, 0.73),
     ));
-    hittable_list.push(create_quad(
+    world.add_object(create_quad(
         Vec3::new(0.0, 0.0, 555.0),
         Vec3::new(555.0, 0.0, 0.0),
         Vec3::new(0.0, 555.0, 0.0),
         Color::new(0.73, 0.73, 0.73),
     ));
-    hittable_list.push(create_cube_rotated_smoke(
+    world.add_object(create_cube_rotated_smoke(
         Vec3::new(165.0, 330.0, 165.0),
         Color::BLACK,
         Vec3::new(265.0, 0.0, 295.0),
         15.0,
     ));
-    hittable_list.push(create_cube_rotated_smoke(
+    world.add_object(create_cube_rotated_smoke(
         Vec3::new(165.0, 165.0, 165.0),
         Color::WHITE,
         Vec3::new(130.0, 0.0, 65.0),
@@ -620,15 +583,14 @@ fn cornell_smoke() {
         },
     );
     let picture = raytracer::canvas::Canvas::empty(image_width, image_height);
-    let raytracer = RayTracer::new(camera, picture, hittable_list.tree(), 50, Color::BLACK);
+    let raytracer = RayTracer::new(camera, picture, world.build(), 50);
     raytracer.render().save("output/book2/image22.png");
 }
 
 fn final_scene(image_width: u32, sample_per_pixel: u32, max_depth: u32) {
-    let mut world = HittableList::default();
+    let mut world = WorldBuilder::default();
     let mut rng = rand::thread_rng();
-
-    let mut box1 = HittableList::default();
+    let mut box1 = ShapeList::default();
     let boxes_per_side = 20;
     for i in 0..boxes_per_side {
         for j in 0..boxes_per_side {
@@ -639,68 +601,68 @@ fn final_scene(image_width: u32, sample_per_pixel: u32, max_depth: u32) {
             let x1 = x0 + w;
             let y1 = rng.gen_range(1.0..101.0);
             let z1 = z0 + w;
-            box1.push(create_cube(
+            box1.push(ShapeList::cube(
                 Vec3::new(x0, y0, z0),
                 Vec3::new(x1, y1, z1),
-                Color::new(0.48, 0.83, 0.53),
             ));
         }
     }
-    world.push(box1.tree());
-
-    world.push(create_quad_light(
+    world.add_object(Object::new(
+        box1.tree(),
+        TexturedMaterial::new(SolidColor::new(Color::new(0.48, 0.83, 0.53)), Lambertian),
+    ));
+    world.add_object(create_quad_light(
         Vec3::new(123.0, 554.0, 147.0),
         Vec3::new(300.0, 0.0, 0.0),
         Vec3::new(0.0, 0.0, 265.0),
         Color::new(7.0, 7.0, 7.0),
     ));
-    world.push(create_lambertian_moving(
+    world.add_object(create_lambertian_moving(
         Vec3::new(400.0, 400.0, 200.0),
         50.0,
         Color::new(0.7, 0.3, 0.1),
         Vec3::new(30.0, 0.0, 0.0),
     ));
-    world.push(create_dielectric(Vec3::new(260.0, 150.0, 45.0), 50.0, 1.5));
-    world.push(create_metal(
+    world.add_object(create_dielectric(Vec3::new(260.0, 150.0, 45.0), 50.0, 1.5));
+    world.add_object(create_metal(
         Vec3::new(0.0, 150.0, 145.0),
         50.0,
         Color::new(0.8, 0.8, 0.9),
         1.0,
     ));
-    world.push(create_dielectric(Vec3::new(360.0, 150.0, 145.0), 70.0, 1.5));
-    world.push(create_smoke(
+    world.add_object(create_dielectric(Vec3::new(360.0, 150.0, 145.0), 70.0, 1.5));
+    world.add_object(create_smoke(
         Vec3::new(360.0, 150.0, 145.0),
         70.0,
         Color::new(0.2, 0.4, 0.9),
         0.2,
     ));
-    world.push(create_smoke(
+    world.add_object(create_smoke(
         Vec3::new(0.0, 0.0, 0.0),
         5000.0,
         Color::WHITE,
         0.0001,
     ));
-    world.push(create_lambertian_texture(
+    world.add_object(create_lambertian_texture(
         Vec3::new(400.0, 200.0, 400.0),
         100.0,
         "assets/earth_map.jpg",
     ));
-    world.push(create_lambertian_noise(
+    world.add_object(create_lambertian_noise(
         Vec3::new(220.0, 280.0, 300.0),
         80.0,
         0.2,
     ));
-
     let ns = 1000;
     let mut spheres = ShapeList::default();
     for _ in 0..ns {
-        spheres.push(Sphere::new(Vec3::random(0.0, 165.0), 10.0));
+        let mut sphere = Sphere::new(Vec3::random(0.0, 165.0), 10.0);
+        sphere.transform(Transform::rotate_y(15.0f64.to_radians()));
+        sphere.transform(Transform::translate(Vec3::new(-100.0, 270.0, 395.0)));
+        spheres.push(sphere);
     }
-    let mut spheres = spheres.tree();
-    spheres.transform(Transform::rotate_y(15.0f64.to_radians()));
-    spheres.transform(Transform::translate(Vec3::new(-100.0, 270.0, 395.0)));
-    world.push(Object::new(
-        spheres,
+    world.add_object(Object::new(
+        spheres.tree(),
         TexturedMaterial::new(SolidColor::new(Color::new(0.73, 0.73, 0.73)), Lambertian),
     ));
 
@@ -723,7 +685,7 @@ fn final_scene(image_width: u32, sample_per_pixel: u32, max_depth: u32) {
         },
     );
     let picture = raytracer::canvas::Canvas::empty(image_width, image_height);
-    let raytracer = RayTracer::new(camera, picture, world.tree(), max_depth, Color::BLACK);
+    let raytracer = RayTracer::new(camera, picture, world.build(), max_depth);
     raytracer.render().save("output/book2/image23.png");
 }
 

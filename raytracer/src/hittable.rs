@@ -1,9 +1,10 @@
 use crate::aabb::AABB;
+use crate::bvh::HittableTree;
 use crate::color::Color;
 use crate::material::Material;
-use crate::pdf::{mixture_generate_with_prob, SpherePDF, PDF};
+use crate::pdf::{mixture_generate_with_prob, ShapePDF, UniformPDF, PDF};
 use crate::ray::Ray;
-use crate::shape::Shape;
+use crate::shape::{Shape, ShapePDFProvider};
 use crate::texture::UV;
 use crate::vec3::Vec3;
 
@@ -27,7 +28,7 @@ impl Default for ScatterInfo {
         Self {
             emission: Color::BLACK,
             attenuation: Color::WHITE,
-            scatter: Ok(Box::new(SpherePDF)),
+            scatter: Ok(Box::new(UniformPDF)),
         }
     }
 }
@@ -117,8 +118,12 @@ impl HitRecord {
 
     // generate a new ray from the custom pdf mixed with the scatter pdf
     // return (new_ray, prob_of_mixture_pdf, prob_of_scatter_pdf)
-    pub fn generate_scatter<T: PDF + 'static>(&self, custom_pdf: T) -> (Ray, f64, f64) {
-        let (v, value) = mixture_generate_with_prob(&custom_pdf, self.get_scatter_pdf());
+    pub fn generate_scatter(&self, custom_pdf: &ShapePDF) -> (Ray, f64, f64) {
+        let (v, value) = if custom_pdf.empty() {
+            self.get_scatter_pdf().generate_with_prob()
+        } else {
+            mixture_generate_with_prob(custom_pdf, self.get_scatter_pdf())
+        };
         (
             self.ray.new_ray(self.get_hit().position, v),
             value,
@@ -189,5 +194,40 @@ impl Hittable for Empty {
 
     fn aabb(&self) -> AABB {
         AABB::default()
+    }
+}
+
+pub struct World {
+    pub objects: HittableTree,
+    pub pdf: ShapePDF,
+    pub background: Color,
+}
+
+#[derive(Default)]
+pub struct WorldBuilder {
+    objects: Vec<Box<dyn Hittable>>,
+    pdf: ShapePDF,
+    background: Option<Color>,
+}
+
+impl WorldBuilder {
+    pub fn add_object<T: Hittable + 'static>(&mut self, object: T) {
+        self.objects.push(Box::new(object));
+    }
+
+    pub fn add_light<T: ShapePDFProvider + 'static>(&mut self, shape: T) {
+        self.pdf.push(shape);
+    }
+
+    pub fn set_background(&mut self, color: Color) {
+        self.background = Some(color);
+    }
+
+    pub fn build(self) -> World {
+        World {
+            objects: HittableTree::new(self.objects),
+            pdf: self.pdf,
+            background: self.background.unwrap_or(Color::BLACK),
+        }
     }
 }

@@ -1,5 +1,7 @@
 use crate::onb::ONB;
+use crate::shape::ShapePDFProvider;
 use crate::vec3::Vec3;
+use rand::prelude::IndexedRandom;
 use std::f64::consts::PI;
 use std::fmt::Debug;
 
@@ -55,13 +57,52 @@ impl PDF for CosinePDF {
 }
 
 #[derive(Debug)]
-pub struct SpherePDF;
+pub struct UniformPDF;
 
-impl PDF for SpherePDF {
+impl PDF for UniformPDF {
     fn prob(&self, _direction: Vec3) -> f64 {
         1.0 / (4.0 * PI)
     }
     fn generate(&self) -> Vec3 {
         Vec3::random_unit_vector()
+    }
+}
+
+#[derive(Debug, Default)]
+pub struct ShapePDF {
+    pdfs: Vec<Box<dyn ShapePDFProvider>>, // shouldn't be empty
+    origin: Vec3,
+}
+
+impl ShapePDF {
+    pub fn push<T: ShapePDFProvider + 'static>(&mut self, pdf: T) {
+        self.pdfs.push(Box::new(pdf));
+    }
+
+    pub fn set_origin(&mut self, origin: Vec3) {
+        self.origin = origin;
+    }
+
+    pub fn empty(&self) -> bool {
+        // special check for empty
+        self.pdfs.is_empty()
+    }
+}
+
+impl PDF for ShapePDF {
+    fn prob(&self, direction: Vec3) -> f64 {
+        let weight = 1.0 / self.pdfs.len() as f64;
+        let mut sum = 0.0;
+        for pdf in &self.pdfs {
+            sum += weight * pdf.prob(self.origin, direction);
+        }
+        sum
+    }
+
+    fn generate(&self) -> Vec3 {
+        self.pdfs
+            .choose(&mut rand::thread_rng())
+            .unwrap()
+            .generate(self.origin)
     }
 }
