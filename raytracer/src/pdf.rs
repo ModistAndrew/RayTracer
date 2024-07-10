@@ -12,12 +12,45 @@ pub trait PDF: Debug {
     fn generate(&self) -> Vec3;
 }
 
+// a dummy PDF stating that the PDF is empty
 #[derive(Debug)]
-pub struct CosinePDF {
+pub struct EmptyPDF;
+
+impl PDF for EmptyPDF {
+    fn prob(&self, _direction: Vec3) -> f64 {
+        unimplemented!()
+    }
+    fn generate(&self) -> Vec3 {
+        unimplemented!()
+    }
+}
+
+#[derive(Debug)]
+pub struct UniformHemisphere {
+    normal: Vec3,
+}
+
+impl UniformHemisphere {
+    pub fn new(normal: Vec3) -> Self {
+        Self { normal }
+    }
+}
+
+impl PDF for UniformHemisphere {
+    fn prob(&self, _direction: Vec3) -> f64 {
+        1.0 / (2.0 * PI)
+    }
+    fn generate(&self) -> Vec3 {
+        Vec3::random_unit_on_hemisphere(self.normal)
+    }
+}
+
+#[derive(Debug)]
+pub struct CosineHemisphere {
     uvw: ONB,
 }
 
-impl CosinePDF {
+impl CosineHemisphere {
     pub fn new(normal: Vec3) -> Self {
         Self {
             uvw: ONB::normal(normal),
@@ -25,7 +58,7 @@ impl CosinePDF {
     }
 }
 
-impl PDF for CosinePDF {
+impl PDF for CosineHemisphere {
     fn prob(&self, direction: Vec3) -> f64 {
         let cosine = direction.normalize().dot(self.uvw.w);
         (cosine / PI).max(0.0)
@@ -36,9 +69,9 @@ impl PDF for CosinePDF {
 }
 
 #[derive(Debug)]
-pub struct UniformPDF;
+pub struct UniformSphere;
 
-impl PDF for UniformPDF {
+impl PDF for UniformSphere {
     fn prob(&self, _direction: Vec3) -> f64 {
         1.0 / (4.0 * PI)
     }

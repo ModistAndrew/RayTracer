@@ -1,5 +1,5 @@
 use crate::hittable::HitRecord;
-use crate::pdf::{CosinePDF, UniformPDF};
+use crate::pdf::{UniformHemisphere, UniformSphere};
 use crate::vec3::Vec3;
 
 pub trait Material: Sync + Send {
@@ -13,7 +13,7 @@ pub struct Lambertian;
 
 impl Material for Lambertian {
     fn scatter(&self, hit_record: &mut HitRecord) -> bool {
-        hit_record.set_scatter_pdf(CosinePDF::new(hit_record.get_hit().normal));
+        hit_record.set_scatter_pdf(UniformHemisphere::new(hit_record.get_hit().normal));
         true
     }
 }
@@ -84,7 +84,7 @@ pub struct Isotropic;
 
 impl Material for Isotropic {
     fn scatter(&self, hit_record: &mut HitRecord) -> bool {
-        hit_record.set_scatter_pdf(UniformPDF);
+        hit_record.set_scatter_pdf(UniformSphere);
         true
     }
 }

@@ -2,12 +2,11 @@ use crate::aabb::AABB;
 use crate::bvh::HittableTree;
 use crate::color::Color;
 use crate::material::Material;
-use crate::pdf::{ShapePDF, UniformPDF, PDF};
+use crate::pdf::{EmptyPDF, PDF, ShapePDF};
 use crate::ray::Ray;
 use crate::shape::{Shape, ShapePDFProvider};
 use crate::texture::UV;
 use crate::vec3::Vec3;
-use std::f64::consts::PI;
 
 pub struct HitInfo {
     pub t: f64,
@@ -29,7 +28,7 @@ impl Default for ScatterInfo {
         Self {
             emission: Color::BLACK,
             attenuation: Color::WHITE,
-            scatter: Ok(Box::new(UniformPDF)),
+            scatter: Ok(Box::new(EmptyPDF)),
         }
     }
 }
@@ -127,9 +126,14 @@ impl HitRecord {
         } else {
             shape_pdf.generate(origin)
         };
+        let value = if shape_pdf.empty() {
+            self.get_scatter_pdf().prob(v)
+        } else {
+            0.5 * self.get_scatter_pdf().prob(v) + 0.5 * shape_pdf.prob(v, origin)
+        };
         (
             self.ray.new_ray(self.get_hit().position, v),
-            0.5 / PI,
+            value,
             self.get_scatter_pdf().prob(v),
         )
     }
