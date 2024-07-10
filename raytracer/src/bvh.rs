@@ -1,13 +1,13 @@
 use crate::aabb::AABB;
-use crate::hittable::{HitRecord, HitResult, Hittable};
+use crate::hittable::{HitRecord, Hittable};
 use crate::shape::Shape;
 use crate::transform::Transform;
 
 pub struct EmptyHittable;
 
 impl Hittable for EmptyHittable {
-    fn hit(&self, _hit_record: &mut HitRecord) -> HitResult {
-        HitResult::Miss
+    fn hit(&self, _hit_record: &mut HitRecord) -> bool {
+        false
     }
 
     fn aabb(&self) -> AABB {
@@ -51,11 +51,12 @@ impl HittableTree {
 }
 
 impl Hittable for HittableTree {
-    fn hit(&self, hit_record: &mut HitRecord) -> HitResult {
+    fn hit(&self, hit_record: &mut HitRecord) -> bool {
         if !self.aabb.hit(&hit_record.ray) {
-            return HitResult::Miss;
+            return false;
         }
-        HitResult::last_not_miss(self.left.hit(hit_record), self.right.hit(hit_record))
+        // note that we don't short-circuit here, because both children need to be hit
+        self.left.hit(hit_record) | self.right.hit(hit_record)
     }
 
     fn aabb(&self) -> AABB {
@@ -79,10 +80,10 @@ impl HittableList {
 }
 
 impl Hittable for HittableList {
-    fn hit(&self, hit_record: &mut HitRecord) -> HitResult {
-        let mut hit_result = HitResult::Miss;
+    fn hit(&self, hit_record: &mut HitRecord) -> bool {
+        let mut hit_result = false;
         for hittable in &self.hittable_list {
-            hit_result = HitResult::last_not_miss(hit_result, hittable.hit(hit_record));
+            hit_result |= hittable.hit(hit_record);
         }
         hit_result
     }

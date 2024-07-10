@@ -115,12 +115,9 @@ impl<T: Texture, M: Material> TexturedMaterial<T, M> {
 }
 
 impl<T: Texture, M: Material> Material for TexturedMaterial<T, M> {
-    fn scatter(&self, hit_record: &mut HitRecord) -> bool {
-        if !self.material.scatter(hit_record) {
-            return false;
-        }
-        hit_record.get_scatter_mut().attenuation = self.texture.value(hit_record);
-        true
+    fn scatter(&self, hit_record: &mut HitRecord) {
+        self.material.scatter(hit_record);
+        hit_record.get_hit_mut().attenuation = self.texture.value(hit_record);
     }
 }
 
@@ -135,8 +132,7 @@ impl<T: Texture> Emissive<T> {
 }
 
 impl<T: Texture> Material for Emissive<T> {
-    fn scatter(&self, hit_record: &mut HitRecord) -> bool {
-        hit_record.get_scatter_mut().emission = self.texture.value(hit_record);
-        false
+    fn scatter(&self, hit_record: &mut HitRecord) {
+        hit_record.get_hit_mut().emission = self.texture.value(hit_record);
     }
 }

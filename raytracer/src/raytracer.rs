@@ -6,7 +6,8 @@ use indicatif::ProgressBar;
 use crate::camera::Camera;
 use crate::canvas::Canvas;
 use crate::color::{BlendMode, Color};
-use crate::hittable::{HitRecord, HitResult, Hittable, World};
+use crate::hittable::Scatter::{Absorb, ScatterPDF, ScatterRay};
+use crate::hittable::{HitRecord, Hittable, World};
 use crate::ray::Ray;
 
 pub struct RayTracer {
@@ -31,24 +32,24 @@ impl RayTracer {
             return Color::BLACK;
         }
         let mut hit_record = HitRecord::new(ray);
-        match self.world.objects.hit(&mut hit_record) {
-            HitResult::Miss => self.world.background,
-            HitResult::Absorb => hit_record.get_scatter().emission,
-            HitResult::Scatter => {
-                let emission = hit_record.get_scatter().emission;
-                let attenuation = hit_record.get_scatter().attenuation;
-                if hit_record.skip_pdf() {
-                    self.raytrace(hit_record.move_scatter_ray(), left_depth - 1)
-                        .blend(attenuation, BlendMode::Mul)
-                        .blend(emission, BlendMode::Add)
-                } else {
-                    let (scatter, mixture_prob, scatter_prob) =
-                        hit_record.generate_scatter(&self.world.pdf);
-                    self.raytrace(scatter, left_depth - 1)
-                        .blend(attenuation, BlendMode::Mul)
-                        .lighten(scatter_prob / mixture_prob)
-                        .blend(emission, BlendMode::Add)
-                }
+        if !self.world.objects.hit(&mut hit_record) {
+            return self.world.background;
+        }
+        let emission = hit_record.get_hit().emission;
+        let attenuation = hit_record.get_hit().attenuation;
+        match &hit_record.get_hit().scatter {
+            Absorb => hit_record.get_hit().emission,
+            ScatterRay(_) => self
+                .raytrace(hit_record.move_hit().scatter.move_ray(), left_depth - 1)
+                .blend(attenuation, BlendMode::Mul)
+                .blend(emission, BlendMode::Add),
+            ScatterPDF(_) => {
+                let (scatter, mixture_prob, scatter_prob) =
+                    hit_record.generate_scatter(&self.world.pdf);
+                self.raytrace(scatter, left_depth - 1)
+                    .blend(attenuation, BlendMode::Mul)
+                    .lighten(scatter_prob / mixture_prob)
+                    .blend(emission, BlendMode::Add)
             }
         }
     }

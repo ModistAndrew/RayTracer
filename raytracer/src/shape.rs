@@ -12,12 +12,12 @@ use crate::transform::Transform;
 use crate::vec3::Vec3;
 
 pub trait Shape: Sync + Send {
-    // hit_record.ray is the original ray. may contain the former hit record.
-    // if hit, update hit_record.hit and ray and return true
+    // hit_record.ray is the original ray. (may contain the former hit info)
+    // if hit, set hit info before returning true
     fn hit(&self, hit_record: &mut HitRecord) -> bool;
 
-    // should return a new shape transformed by the matrix. you may call aabb() on the new shape to get the new bounding box.
-    // may not be able to handle all transformations.
+    // should return a new shape transformed by the matrix. you may call aabb() on the new shape to get the new bounding box
+    // may not be able to handle all transformations
     // remember to update member variables
     fn transform(&mut self, matrix: Transform);
 

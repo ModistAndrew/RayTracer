@@ -3,18 +3,17 @@ use crate::pdf::{UniformHemisphere, UniformSphere};
 use crate::vec3::Vec3;
 
 pub trait Material: Sync + Send {
-    // hit_record.ray and hit_record.hit are the original ray and hit record.
-    // may contain the former scattered ray. must set hit_record.scatter.
-    // scatter direction shouldn't be 0 if return true
-    fn scatter(&self, hit_record: &mut HitRecord) -> bool;
+    // hit_record.ray and hit_record.hit are the original ray and hit info
+    // should set hit_record.scatter to three possible values (Absorb by default)
+    // may decorate emission and attenuation
+    fn scatter(&self, hit_record: &mut HitRecord);
 }
 
 pub struct Lambertian;
 
 impl Material for Lambertian {
-    fn scatter(&self, hit_record: &mut HitRecord) -> bool {
+    fn scatter(&self, hit_record: &mut HitRecord) {
         hit_record.set_scatter_pdf(UniformHemisphere::new(hit_record.get_hit().normal));
-        true
     }
 }
 
@@ -29,14 +28,15 @@ impl Metal {
 }
 
 impl Material for Metal {
-    fn scatter(&self, hit_record: &mut HitRecord) -> bool {
+    fn scatter(&self, hit_record: &mut HitRecord) {
         let reflected = hit_record
             .ray
             .direction
             .reflect(hit_record.get_hit().normal);
         let reflected = reflected.normalize() + Vec3::random_unit_vector() * self.fuzz;
-        hit_record.set_scatter_ray(reflected);
-        reflected.dot(hit_record.get_hit().normal) > 0.0
+        if reflected.dot(hit_record.get_hit().normal) > 0.0 {
+            hit_record.set_scatter_ray(reflected);
+        }
     }
 }
 
@@ -56,7 +56,7 @@ impl Dielectric {
 }
 
 impl Material for Dielectric {
-    fn scatter(&self, hit_record: &mut HitRecord) -> bool {
+    fn scatter(&self, hit_record: &mut HitRecord) {
         let refraction_ratio = if hit_record.get_hit().front_face {
             1.0 / self.refraction_index
         } else {
@@ -76,15 +76,13 @@ impl Material for Dielectric {
             r_out_perp + r_out_parallel
         };
         hit_record.set_scatter_ray(direction);
-        true
     }
 }
 
 pub struct Isotropic;
 
 impl Material for Isotropic {
-    fn scatter(&self, hit_record: &mut HitRecord) -> bool {
+    fn scatter(&self, hit_record: &mut HitRecord) {
         hit_record.set_scatter_pdf(UniformSphere);
-        true
     }
 }
