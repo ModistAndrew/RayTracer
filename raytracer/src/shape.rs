@@ -190,7 +190,7 @@ impl ShapePDFProvider for Quad {
     }
 
     fn generate(&self, origin: Vec3) -> Vec3 {
-        (self.q + self.u * rand::random::<f64>() + self.v * rand::random::<f64>()) - origin
+        self.q + self.u * rand::random::<f64>() + self.v * rand::random::<f64>() - origin
     }
 }
 

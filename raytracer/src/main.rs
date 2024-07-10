@@ -506,7 +506,7 @@ fn cornell_box() {
         ImageParam {
             image_width,
             image_height,
-            sample_per_pixel: 1000,
+            sample_per_pixel: 10,
         },
     );
     let picture = raytracer::canvas::Canvas::empty(image_width, image_height);

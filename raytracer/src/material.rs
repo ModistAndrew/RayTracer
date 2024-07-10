@@ -1,5 +1,5 @@
 use crate::hittable::HitRecord;
-use crate::pdf::CosinePDF;
+use crate::pdf::{CosinePDF, UniformPDF};
 use crate::vec3::Vec3;
 
 pub trait Material: Sync + Send {
@@ -84,7 +84,7 @@ pub struct Isotropic;
 
 impl Material for Isotropic {
     fn scatter(&self, hit_record: &mut HitRecord) -> bool {
-        hit_record.set_scatter_ray(Vec3::random_unit_vector());
+        hit_record.set_scatter_pdf(UniformPDF);
         true
     }
 }

@@ -10,10 +10,6 @@ pub trait PDF: Debug {
     fn prob(&self, direction: Vec3) -> f64;
     // generate a random Vec3 according to the probability density function
     fn generate(&self) -> Vec3;
-    fn generate_with_prob(&self) -> (Vec3, f64) {
-        let v = self.generate();
-        (v, self.prob(v))
-    }
 }
 
 #[derive(Debug)]

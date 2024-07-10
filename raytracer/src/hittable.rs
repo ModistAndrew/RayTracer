@@ -116,20 +116,19 @@ impl HitRecord {
         self.get_scatter().scatter.as_ref().unwrap().as_ref()
     }
 
-    // generate a new ray from the custom pdf mixed with the scatter pdf
+    // generate a new ray from the shape pdf mixed with the scatter pdf
     // return (new_ray, prob_of_mixture_pdf, prob_of_scatter_pdf)
-    pub fn generate_scatter(&self, custom_pdf: &ShapePDF) -> (Ray, f64, f64) {
-        let (v, value) = if custom_pdf.empty() {
-            self.get_scatter_pdf().generate_with_prob()
+    pub fn generate_scatter(&self, shape_pdf: &ShapePDF) -> (Ray, f64, f64) {
+        let origin = self.get_hit().position;
+        let v = if shape_pdf.empty() || rand::random::<f64>() < 0.5 {
+            self.get_scatter_pdf().generate()
         } else {
-            let origin = self.get_hit().position;
-            let v = if rand::random::<f64>() < 0.5 {
-                self.get_scatter_pdf().generate()
-            } else {
-                custom_pdf.generate(origin)
-            };
-            let value = 0.5 * self.get_scatter_pdf().prob(v) + 0.5 * custom_pdf.prob(origin, v);
-            (v, value)
+            shape_pdf.generate(origin)
+        };
+        let value = if shape_pdf.empty() {
+            self.get_scatter_pdf().prob(v)
+        } else {
+            0.5 * self.get_scatter_pdf().prob(v) + 0.5 * shape_pdf.prob(v, origin)
         };
         (
             self.ray.new_ray(self.get_hit().position, v),

@@ -23,6 +23,7 @@ impl Ray {
         self.origin + self.direction * t
     }
 
+    // return a new Ray with the same time and positive interval
     pub fn new_ray(&self, origin: Vec3, direction: Vec3) -> Self {
         Self::new(origin, direction, self.time, Interval::POSITIVE)
     }
