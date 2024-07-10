@@ -2,7 +2,7 @@ use crate::interval::Interval;
 use image::Rgb;
 use rand::Rng;
 
-#[derive(Clone, Copy)]
+#[derive(Clone, Copy, Debug)]
 pub struct Color {
     pub r: f64,
     pub g: f64,

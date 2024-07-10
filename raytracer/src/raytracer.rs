@@ -7,6 +7,7 @@ use crate::camera::Camera;
 use crate::canvas::Canvas;
 use crate::color::{BlendMode, Color};
 use crate::hittable::{HitRecord, HitResult, Hittable};
+use crate::pdf::SpherePDF;
 use crate::ray::Ray;
 
 pub struct RayTracer {
@@ -45,9 +46,18 @@ impl RayTracer {
             HitResult::Scatter => {
                 let emission = hit_record.get_scatter().emission;
                 let attenuation = hit_record.get_scatter().attenuation;
-                self.raytrace(hit_record.get_output(), left_depth - 1)
-                    .blend(attenuation, BlendMode::Mul)
-                    .blend(emission, BlendMode::Add)
+                if hit_record.skip_pdf() {
+                    self.raytrace(hit_record.move_scatter_ray(), left_depth - 1)
+                        .blend(attenuation, BlendMode::Mul)
+                        .blend(emission, BlendMode::Add)
+                } else {
+                    let (scatter, mixture_prob, scatter_prob) =
+                        hit_record.generate_scatter(SpherePDF);
+                    self.raytrace(scatter, left_depth - 1)
+                        .blend(attenuation, BlendMode::Mul)
+                        .lighten(scatter_prob / mixture_prob)
+                        .blend(emission, BlendMode::Add)
+                }
             }
         }
     }

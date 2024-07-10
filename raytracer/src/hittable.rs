@@ -1,7 +1,7 @@
 use crate::aabb::AABB;
 use crate::color::Color;
 use crate::material::Material;
-use crate::pdf::{SpherePDF, PDF};
+use crate::pdf::{mixture_generate_with_prob, SpherePDF, PDF};
 use crate::ray::Ray;
 use crate::shape::Shape;
 use crate::texture::UV;
@@ -65,8 +65,12 @@ impl HitRecord {
         self.ray.interval.limit_max(t)
     }
 
-    pub fn set_scatter(&mut self, direction: Vec3) {
+    pub fn set_scatter_ray(&mut self, direction: Vec3) {
         self.get_scatter_mut().scatter = Err(self.ray.new_ray(self.get_hit().position, direction))
+    }
+
+    pub fn set_scatter_pdf<T: PDF + 'static>(&mut self, pdf: T) {
+        self.get_scatter_mut().scatter = Ok(Box::new(pdf))
     }
 
     pub fn does_hit(&self) -> bool {
@@ -82,6 +86,10 @@ impl HitRecord {
         self.hit_info.as_mut().unwrap()
     }
 
+    pub fn move_hit(self) -> HitInfo {
+        self.hit_info.unwrap()
+    }
+
     pub fn get_scatter(&self) -> &ScatterInfo {
         &self.get_hit().scatter_info
     }
@@ -91,8 +99,31 @@ impl HitRecord {
         &mut self.get_hit_mut().scatter_info
     }
 
-    pub fn get_output(self) -> Ray {
-        self.hit_info.unwrap().scatter_info.scatter.err().unwrap()
+    pub fn move_scatter(self) -> ScatterInfo {
+        self.move_hit().scatter_info
+    }
+
+    pub fn skip_pdf(&self) -> bool {
+        self.get_scatter().scatter.is_err()
+    }
+
+    pub fn move_scatter_ray(self) -> Ray {
+        self.move_scatter().scatter.unwrap_err()
+    }
+
+    pub fn get_scatter_pdf(&self) -> &dyn PDF {
+        self.get_scatter().scatter.as_ref().unwrap().as_ref()
+    }
+
+    // generate a new ray from the custom pdf mixed with the scatter pdf
+    // return (new_ray, prob_of_mixture_pdf, prob_of_scatter_pdf)
+    pub fn generate_scatter<T: PDF + 'static>(&self, custom_pdf: T) -> (Ray, f64, f64) {
+        let (v, value) = mixture_generate_with_prob(&custom_pdf, self.get_scatter_pdf());
+        (
+            self.ray.new_ray(self.get_hit().position, v),
+            value,
+            self.get_scatter_pdf().prob(v),
+        )
     }
 }
 

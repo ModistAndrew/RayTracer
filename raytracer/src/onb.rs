@@ -1,5 +1,6 @@
 use crate::vec3::Vec3;
 
+#[derive(Debug)]
 pub struct ONB {
     pub u: Vec3,
     pub v: Vec3,

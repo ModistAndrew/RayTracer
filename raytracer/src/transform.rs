@@ -1,6 +1,6 @@
 use crate::vec3::Vec3;
 
-#[derive(Clone, Copy)]
+#[derive(Clone, Copy, Debug)]
 pub struct Transform {
     matrix: [[f64; 4]; 4],
 }

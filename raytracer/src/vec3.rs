@@ -4,7 +4,7 @@ use std::ops::{
     Add, AddAssign, Div, DivAssign, Index, IndexMut, Mul, MulAssign, Neg, Sub, SubAssign,
 };
 
-#[derive(Clone, Copy, Default)]
+#[derive(Clone, Copy, Default, Debug)]
 pub struct Vec3 {
     pub x: f64,
     pub y: f64,
@@ -77,6 +77,7 @@ impl Vec3 {
         }
     }
 
+    // return a random vector in the unit hemisphere with cosine distribution
     pub fn random_cosine_direction() -> Vec3 {
         let r1 = rand::random::<f64>();
         let r2 = rand::random::<f64>();

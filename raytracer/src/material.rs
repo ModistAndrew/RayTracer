@@ -1,5 +1,5 @@
 use crate::hittable::HitRecord;
-use crate::onb::ONB;
+use crate::pdf::CosinePDF;
 use crate::vec3::Vec3;
 
 pub trait Material: Sync + Send {
@@ -13,9 +13,7 @@ pub struct Lambertian;
 
 impl Material for Lambertian {
     fn scatter(&self, hit_record: &mut HitRecord) -> bool {
-        let uvw = ONB::normal(hit_record.get_hit().normal);
-        let scatter_direction = uvw.local(Vec3::random_cosine_direction());
-        hit_record.set_scatter(scatter_direction);
+        hit_record.set_scatter_pdf(CosinePDF::new(hit_record.get_hit().normal));
         true
     }
 }
@@ -37,7 +35,7 @@ impl Material for Metal {
             .direction
             .reflect(hit_record.get_hit().normal);
         let reflected = reflected.normalize() + Vec3::random_unit_vector() * self.fuzz;
-        hit_record.set_scatter(reflected);
+        hit_record.set_scatter_ray(reflected);
         reflected.dot(hit_record.get_hit().normal) > 0.0
     }
 }
@@ -77,7 +75,7 @@ impl Material for Dielectric {
             let r_out_parallel = -normal * (1.0 - r_out_perp.length_squared()).sqrt();
             r_out_perp + r_out_parallel
         };
-        hit_record.set_scatter(direction);
+        hit_record.set_scatter_ray(direction);
         true
     }
 }
@@ -86,7 +84,7 @@ pub struct Isotropic;
 
 impl Material for Isotropic {
     fn scatter(&self, hit_record: &mut HitRecord) -> bool {
-        hit_record.set_scatter(Vec3::random_unit_vector());
+        hit_record.set_scatter_ray(Vec3::random_unit_vector());
         true
     }
 }
