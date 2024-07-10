@@ -133,6 +133,8 @@ impl<T: Texture> Emissive<T> {
 
 impl<T: Texture> Material for Emissive<T> {
     fn scatter(&self, hit_record: &mut HitRecord) {
-        hit_record.get_hit_mut().emission = self.texture.value(hit_record);
+        if hit_record.get_hit().front_face {
+            hit_record.get_hit_mut().emission = self.texture.value(hit_record);
+        }
     }
 }
