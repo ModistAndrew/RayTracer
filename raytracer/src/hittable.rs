@@ -127,7 +127,7 @@ impl HitRecord {
     pub fn generate_scatter(&self, shape_pdf: &ShapePDF) -> (Ray, f64, f64) {
         let scatter_pdf = self.get_hit().scatter.pdf();
         let origin = self.get_hit().position;
-        let v = if shape_pdf.empty() {
+        let v = if shape_pdf.empty() || rand::random::<f64>() < 0.5 {
             scatter_pdf.generate()
         } else {
             shape_pdf.generate(origin)
@@ -135,7 +135,7 @@ impl HitRecord {
         let value = if shape_pdf.empty() {
             scatter_pdf.prob(v)
         } else {
-            shape_pdf.prob(v, origin)
+            0.5 * scatter_pdf.prob(v) + 0.5 * shape_pdf.prob(v, origin)
         };
         (
             self.ray.new_ray(self.get_hit().position, v),

@@ -506,12 +506,12 @@ fn cornell_box() {
         ImageParam {
             image_width,
             image_height,
-            sample_per_pixel: 10,
+            sample_per_pixel: 1000,
         },
     );
     let picture = raytracer::canvas::Canvas::empty(image_width, image_height);
     let raytracer = RayTracer::new(camera, picture, world.build(), 50);
-    raytracer.render().save("output/book3/image10.png");
+    raytracer.render().save("output/book3/image11.png");
 }
 
 fn cornell_smoke() {
