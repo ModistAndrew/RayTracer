@@ -25,7 +25,7 @@ pub trait Shape: Sync + Send {
     fn aabb(&self) -> AABB;
 }
 
-pub trait ShapePDFProvider: Sync + Send + Debug {
+pub trait ShapePDFProvider: Shape + Debug {
     // similar to PDF but we specify the origin
     fn prob(&self, origin: Vec3, direction: Vec3) -> f64;
     fn generate(&self, origin: Vec3) -> Vec3;
@@ -194,6 +194,98 @@ impl ShapePDFProvider for Quad {
     }
 }
 
+#[derive(Debug)]
+pub struct Triangle {
+    q: Vec3,
+    u: Vec3,
+    v: Vec3,
+    w: Vec3,
+    normal: Vec3,
+    d: f64,
+    area: f64,
+}
+
+impl Triangle {
+    pub fn new(q: Vec3, u: Vec3, v: Vec3) -> Self {
+        let n = u * v;
+        let normal = n.normalize();
+        let d = normal.dot(q);
+        let w = n / n.length_squared();
+        let area = n.length() / 2.0;
+        Self {
+            q,
+            u,
+            v,
+            w,
+            normal,
+            d,
+            area,
+        }
+    }
+}
+
+impl Shape for Triangle {
+    fn hit(&self, hit_record: &mut HitRecord) -> bool {
+        let ray = &hit_record.ray;
+        let denominator = self.normal.dot(ray.direction);
+        let t = (self.d - self.normal.dot(ray.origin)) / denominator;
+        if !ray.interval.contains(t) {
+            return false;
+        }
+        let intersection = ray.at(t);
+        let planar_hit_pos = intersection - self.q;
+        let alpha = self.w.dot(planar_hit_pos * self.v);
+        let beta = self.w.dot(self.u * planar_hit_pos);
+        if alpha >= 0.0 && beta >= 0.0 && alpha + beta <= 1.0 {
+            hit_record.set_hit(t, self.normal, UV::new(alpha, beta));
+            return true;
+        }
+        false
+    }
+
+    fn transform(&mut self, matrix: Transform) {
+        self.q = matrix.pos(self.q);
+        self.u = matrix.direction(self.u);
+        self.v = matrix.direction(self.v);
+        let n = self.u * self.v;
+        self.normal = n.normalize();
+        self.d = self.normal.dot(self.q);
+        self.w = n / n.length_squared();
+        self.area = n.length() / 2.0;
+    }
+
+    fn aabb(&self) -> AABB {
+        AABB::union(
+            AABB::from_vec3(self.q, self.q + self.u),
+            AABB::from_vec3(self.q, self.q + self.v),
+        )
+    }
+}
+
+impl ShapePDFProvider for Triangle {
+    fn prob(&self, origin: Vec3, direction: Vec3) -> f64 {
+        let ray = Ray::new(origin, direction, 0.0, Interval::UNIVERSE);
+        let mut hit_record = HitRecord::new(ray);
+        if !self.hit(&mut hit_record) {
+            return 0.0;
+        }
+        let hit = hit_record.get_hit();
+        let distance_squared = hit.t * hit.t * direction.length_squared();
+        let cosine = -direction.dot(hit.normal) / direction.length();
+        distance_squared / (cosine * self.area)
+    }
+
+    fn generate(&self, origin: Vec3) -> Vec3 {
+        let mut x = rand::random::<f64>();
+        let mut y = rand::random::<f64>();
+        if x + y > 1.0 {
+            x = 1.0 - x;
+            y = 1.0 - y;
+        }
+        self.q + self.u * x + self.v * y - origin
+    }
+}
+
 impl ShapeList {
     pub fn cube(a: Vec3, b: Vec3) -> ShapeList {
         let aabb = AABB::from_vec3(a, b);
@@ -203,32 +295,32 @@ impl ShapeList {
         let dy = Vec3::new(0.0, aabb.y.length(), 0.0);
         let dz = Vec3::new(0.0, 0.0, aabb.z.length());
         let mut quads = ShapeList::default();
-        quads.push(Quad::new(
+        quads.push(Triangle::new(
             Vec3::new(min_pos.x, min_pos.y, max_pos.z),
             dx,
             dy,
         ));
-        quads.push(Quad::new(
+        quads.push(Triangle::new(
             Vec3::new(max_pos.x, min_pos.y, max_pos.z),
             -dz,
             dy,
         ));
-        quads.push(Quad::new(
+        quads.push(Triangle::new(
             Vec3::new(max_pos.x, min_pos.y, min_pos.z),
             -dx,
             dy,
         ));
-        quads.push(Quad::new(
+        quads.push(Triangle::new(
             Vec3::new(min_pos.x, min_pos.y, min_pos.z),
             dz,
             dy,
         ));
-        quads.push(Quad::new(
+        quads.push(Triangle::new(
             Vec3::new(min_pos.x, max_pos.y, max_pos.z),
             dx,
             -dz,
         ));
-        quads.push(Quad::new(
+        quads.push(Triangle::new(
             Vec3::new(min_pos.x, min_pos.y, min_pos.z),
             dx,
             dz,

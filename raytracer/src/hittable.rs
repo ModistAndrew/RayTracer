@@ -124,18 +124,18 @@ impl HitRecord {
     // generate a new ray from the shape pdf mixed with the scatter pdf
     // return (new_ray, prob_of_mixture_pdf, prob_of_scatter_pdf)
     // if shape pdf is empty, use scatter pdf only
-    pub fn generate_scatter(&self, shape_pdf: &ShapePDF) -> (Ray, f64, f64) {
+    pub fn generate_scatter(&self, light_pdf: &ShapePDF) -> (Ray, f64, f64) {
         let scatter_pdf = self.get_hit().scatter.pdf();
         let origin = self.get_hit().position;
-        let v = if shape_pdf.empty() || rand::random::<f64>() < 0.5 {
+        let v = if light_pdf.empty() || rand::random::<f64>() < 0.5 {
             scatter_pdf.generate()
         } else {
-            shape_pdf.generate(origin)
+            light_pdf.generate(origin)
         };
-        let value = if shape_pdf.empty() {
+        let value = if light_pdf.empty() {
             scatter_pdf.prob(v)
         } else {
-            0.5 * scatter_pdf.prob(v) + 0.5 * shape_pdf.prob(v, origin)
+            0.5 * scatter_pdf.prob(v) + 0.5 * light_pdf.prob(v, origin)
         };
         (
             self.ray.new_ray(self.get_hit().position, v),
@@ -193,14 +193,14 @@ impl Hittable for Empty {
 
 pub struct World {
     pub objects: HittableTree,
-    pub pdf: ShapePDF,
+    pub light_pdf: ShapePDF,
     pub background: Color,
 }
 
 #[derive(Default)]
 pub struct WorldBuilder {
     objects: Vec<Box<dyn Hittable>>,
-    pdf: ShapePDF,
+    light_pdf: ShapePDF,
     background: Option<Color>,
 }
 
@@ -210,7 +210,7 @@ impl WorldBuilder {
     }
 
     pub fn add_light<T: ShapePDFProvider + 'static>(&mut self, shape: T) {
-        self.pdf.push(shape);
+        self.light_pdf.push(shape);
     }
 
     pub fn set_background(&mut self, color: Color) {
@@ -220,7 +220,7 @@ impl WorldBuilder {
     pub fn build(self) -> World {
         World {
             objects: HittableTree::new(self.objects),
-            pdf: self.pdf,
+            light_pdf: self.light_pdf,
             background: self.background.unwrap_or(Color::BLACK),
         }
     }

@@ -45,7 +45,7 @@ impl RayTracer {
                 .blend(emission, BlendMode::Add),
             ScatterPDF(_) => {
                 let (scatter, mixture_prob, scatter_prob) =
-                    hit_record.generate_scatter(&self.world.pdf);
+                    hit_record.generate_scatter(&self.world.light_pdf);
                 self.raytrace(scatter, left_depth - 1)
                     .blend(attenuation, BlendMode::Mul)
                     .lighten(scatter_prob / mixture_prob)
