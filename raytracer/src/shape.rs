@@ -51,8 +51,8 @@ impl Sphere {
 
 impl Shape for Sphere {
     fn hit(&self, hit_record: &mut HitRecord) -> bool {
-        let ray = &hit_record.ray;
-        let interval = ray.interval;
+        let ray = hit_record.get_ray();
+        let interval = hit_record.get_interval();
         let oc = self.center - ray.origin;
         let a = ray.direction.length_squared();
         let h = ray.direction.dot(oc);
@@ -89,7 +89,7 @@ impl Shape for Sphere {
 
 impl ShapePDFProvider for Sphere {
     fn prob(&self, origin: Vec3, direction: Vec3) -> f64 {
-        let ray = Ray::new(origin, direction, 0.0, Interval::UNIVERSE);
+        let ray = Ray::new(origin, direction);
         let mut hit_record = HitRecord::new(ray);
         if !self.hit(&mut hit_record) {
             return 0.0;
@@ -140,10 +140,10 @@ impl Quad {
 
 impl Shape for Quad {
     fn hit(&self, hit_record: &mut HitRecord) -> bool {
-        let ray = &hit_record.ray;
+        let ray = hit_record.get_ray();
         let denominator = self.normal.dot(ray.direction);
         let t = (self.d - self.normal.dot(ray.origin)) / denominator;
-        if !ray.interval.contains(t) {
+        if !hit_record.get_interval().contains(t) {
             return false;
         }
         let intersection = ray.at(t);
@@ -178,7 +178,7 @@ impl Shape for Quad {
 
 impl ShapePDFProvider for Quad {
     fn prob(&self, origin: Vec3, direction: Vec3) -> f64 {
-        let ray = Ray::new(origin, direction, 0.0, Interval::UNIVERSE);
+        let ray = Ray::new(origin, direction);
         let mut hit_record = HitRecord::new(ray);
         if !self.hit(&mut hit_record) {
             return 0.0;
@@ -237,13 +237,13 @@ impl Triangle {
 
 impl Shape for Triangle {
     fn hit(&self, hit_record: &mut HitRecord) -> bool {
-        let ray = &hit_record.ray;
+        let ray = hit_record.get_ray();
         if ray.direction.dot(self.normal) > 0.0 {
             return false;
         } // back face culling
         let denominator = self.normal.dot(ray.direction);
         let t = (self.d - self.normal.dot(ray.origin)) / denominator;
-        if !ray.interval.contains(t) {
+        if !hit_record.get_interval().contains(t) {
             return false;
         }
         let intersection = ray.at(t);
@@ -278,7 +278,7 @@ impl Shape for Triangle {
 
 impl ShapePDFProvider for Triangle {
     fn prob(&self, origin: Vec3, direction: Vec3) -> f64 {
-        let ray = Ray::new(origin, direction, 0.0, Interval::UNIVERSE);
+        let ray = Ray::new(origin, direction);
         let mut hit_record = HitRecord::new(ray);
         if !self.hit(&mut hit_record) {
             return 0.0;
@@ -390,10 +390,10 @@ impl<T: Shape> Moving<T> {
 
 impl<T: Shape> Shape for Moving<T> {
     fn hit(&self, hit_record: &mut HitRecord) -> bool {
-        let shift = self.direction * hit_record.ray.time;
-        hit_record.ray.origin -= shift;
+        let shift = self.direction * hit_record.get_ray().time;
+        hit_record.get_ray_mut().origin -= shift;
         let hit = self.shape.hit(hit_record);
-        hit_record.ray.origin += shift;
+        hit_record.get_ray_mut().origin += shift;
         if hit {
             hit_record.get_hit_mut().position += shift;
         }
@@ -427,32 +427,22 @@ impl<T: Shape> ConstantMedium<T> {
 
 impl<T: Shape> Shape for ConstantMedium<T> {
     fn hit(&self, hit_record: &mut HitRecord) -> bool {
-        let ray = &hit_record.ray;
-        let mut rec1 = HitRecord::new(Ray::new(
-            ray.origin,
-            ray.direction,
-            ray.time,
-            Interval::UNIVERSE,
-        ));
+        let ray = hit_record.get_ray();
+        let mut rec1 = HitRecord::new(ray.clone());
         if !self.boundary.hit(&mut rec1) {
             return false;
         }
         let t1 = rec1.get_hit().t;
-        let mut rec2 = HitRecord::new(Ray::new(
-            ray.origin,
-            ray.direction,
-            ray.time,
-            Interval::POSITIVE + t1,
-        ));
+        let mut rec2 = HitRecord::new(ray.clone());
         if !self.boundary.hit(&mut rec2) {
             return false;
         }
         let t2 = rec2.get_hit().t;
-        let interval = Interval::new(t1, t2).intersect(ray.interval);
+        let interval = Interval::new(t1, t2).intersect(hit_record.get_interval());
         if interval.empty() {
             return false;
         }
-        let ray_length = hit_record.ray.direction.length();
+        let ray_length = hit_record.get_ray().direction.length();
         let hit_distance = self.neg_inv_density * rand::random::<f64>().ln();
         let t = interval.min + hit_distance / ray_length;
         if !interval.surrounds(t) {
@@ -468,5 +458,40 @@ impl<T: Shape> Shape for ConstantMedium<T> {
 
     fn aabb(&self) -> AABB {
         self.boundary.aabb()
+    }
+}
+
+pub struct Edge<T: Shape> {
+    radius: f64,
+    shape: T,
+}
+
+impl<T: Shape> Edge<T> {
+    pub fn new(radius: f64, shape: T) -> Self {
+        Self { radius, shape }
+    }
+}
+
+impl<T: Shape> Shape for Edge<T> {
+    fn hit(&self, hit_record: &mut HitRecord) -> bool {
+        let uvw = ONB::normal(hit_record.get_ray().direction);
+        let interval = hit_record.get_interval();
+        if !self.shape.hit(hit_record) {
+            return false;
+        }
+        for _ in 0..50 {
+            if !self.shape.hit(&mut HitRecord::new(hit_record.get_ray().offset(uvw.local(Vec3::random_in_unit_disk() * self.radius)))) {
+                return true;
+            }
+        }
+        false
+    }
+
+    fn transform(&mut self, matrix: Transform) {
+        self.shape.transform(matrix);
+    }
+
+    fn aabb(&self) -> AABB {
+        self.shape.aabb()
     }
 }

@@ -6,7 +6,7 @@ use raytracer::hittable::{Object, WorldBuilder};
 use raytracer::material::{Dielectric, Isotropic, Lambertian, Metal};
 use raytracer::noise::Noise;
 use raytracer::raytracer::RayTracer;
-use raytracer::shape::{ConstantMedium, Moving, Quad, Shape, Sphere};
+use raytracer::shape::{ConstantMedium, Edge, Moving, Quad, Shape, Sphere};
 use raytracer::texture::{
     CheckerTexture, Emissive, ImageTexture, NoiseTexture, SolidColor, TexturedMaterial,
 };
@@ -17,10 +17,10 @@ fn create_lambertian(
     center: Vec3,
     radius: f64,
     albedo: Color,
-) -> Object<Sphere, TexturedMaterial<SolidColor, Lambertian>> {
+) -> Object<Edge<Sphere>, TexturedMaterial<SolidColor, Lambertian>> {
     Object::new(
-        Sphere::new(center, radius),
-        TexturedMaterial::new(SolidColor::new(albedo), Lambertian),
+        Edge::new(0.01, Sphere::new(center, radius)),
+        TexturedMaterial::new(SolidColor::new(Color::BLACK), Lambertian),
     )
 }
 
@@ -166,13 +166,14 @@ fn create_cube_rotated_smoke(
 
 fn bouncing_spheres() {
     let mut world = WorldBuilder::default();
+    world.set_background(Color::new(0.7, 0.8, 1.0));
     world.add_object(create_lambertian_checker(
         Vec3::new(0.0, -1000.0, 0.0),
         1000.0,
     ));
     let mut rng = rand::thread_rng();
-    for a in -11..11 {
-        for b in -11..11 {
+    for a in -2..2 {
+        for b in -2..2 {
             let choose_mat = rng.gen::<f64>();
             let center = Vec3::new(
                 a as f64 + 0.9 * rng.gen::<f64>(),
@@ -714,7 +715,7 @@ fn final_scene(image_width: u32, sample_per_pixel: u32, max_depth: u32) {
 }
 
 fn main() {
-    let x = 5;
+    let x = 1;
     match x {
         1 => bouncing_spheres(),
         2 => checkered_spheres(),

@@ -23,8 +23,8 @@ impl AABB {
         )
     }
 
-    pub fn hit(&self, ray: &Ray) -> bool {
-        let mut t_interval = ray.interval;
+    pub fn hit(&self, ray: &Ray, interval: Interval) -> bool {
+        let mut t_interval = interval;
         for i in 0..3 {
             let inv_d = 1.0 / ray.direction[i];
             let t0 = (self[i].min - ray.origin[i]) * inv_d;

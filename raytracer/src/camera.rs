@@ -1,7 +1,6 @@
-use crate::interval::Interval;
-use crate::onb::ONB;
-use rand::{random, Rng};
+use rand::Rng;
 
+use crate::onb::ONB;
 use crate::ray::Ray;
 use crate::vec3::Vec3;
 
@@ -85,7 +84,7 @@ impl Camera {
         let origin = self.defocus_disk_sample();
         let direction =
             self.viewport_upper_left + self.viewport_u * u + self.viewport_v * v - origin;
-        Ray::new(origin, direction, random(), Interval::POSITIVE)
+        Ray::new(origin, direction)
     }
 
     fn defocus_disk_sample(&self) -> Vec3 {

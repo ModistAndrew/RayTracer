@@ -1,21 +1,18 @@
-use crate::interval::Interval;
 use crate::vec3::Vec3;
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub struct Ray {
     pub origin: Vec3,
     pub direction: Vec3, // no need to normalize
     pub time: f64,
-    pub interval: Interval,
 }
 
 impl Ray {
-    pub fn new(origin: Vec3, direction: Vec3, time: f64, interval: Interval) -> Self {
+    pub fn new(origin: Vec3, direction: Vec3) -> Self {
         Self {
             origin,
             direction,
-            time,
-            interval,
+            time: rand::random::<f64>(),
         }
     }
 
@@ -23,8 +20,16 @@ impl Ray {
         self.origin + self.direction * t
     }
 
-    // return a new Ray with the same time and positive interval
+    // return a new Ray with the same time
     pub fn new_ray(&self, origin: Vec3, direction: Vec3) -> Self {
-        Self::new(origin, direction, self.time, Interval::POSITIVE)
+        Self {
+            origin,
+            direction,
+            time: self.time,
+        }
+    }
+
+    pub fn offset(&self, v: Vec3) -> Self {
+        self.new_ray(self.origin + v, self.direction)
     }
 }

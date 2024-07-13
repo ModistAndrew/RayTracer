@@ -2,6 +2,7 @@ use crate::aabb::AABB;
 use crate::bvh::HittableTree;
 use crate::color::Color;
 use crate::hittable::Scatter::{Absorb, ScatterPDF, ScatterRay};
+use crate::interval::Interval;
 use crate::material::Material;
 use crate::pdf::{ShapePDF, PDF};
 use crate::ray::Ray;
@@ -57,8 +58,9 @@ pub struct HitInfo {
 }
 
 pub struct HitRecord {
-    pub ray: Ray, // the original ray
-    pub hit_info: Option<HitInfo>,
+    ray: Ray, // the original ray
+    interval: Interval, // mutable
+    hit_info: Option<HitInfo>,
 }
 
 impl HitRecord {
@@ -66,6 +68,7 @@ impl HitRecord {
     pub fn new(ray: Ray) -> Self {
         Self {
             ray,
+            interval: Interval::POSITIVE,
             hit_info: None,
         }
     }
@@ -88,7 +91,7 @@ impl HitRecord {
             attenuation: Color::WHITE,
             scatter: Absorb,
         });
-        self.ray.interval.limit_max(t)
+        self.interval.limit_max(t)
     }
 
     pub fn set_scatter_ray(&mut self, direction: Vec3) {
@@ -142,6 +145,18 @@ impl HitRecord {
             value,
             scatter_pdf.prob(v),
         )
+    }
+
+    pub fn get_ray(&self) -> &Ray {
+        &self.ray
+    }
+
+    pub fn get_ray_mut(&mut self) -> &mut Ray { // just for decoration. should restore the ray
+        &mut self.ray
+    }
+
+    pub fn get_interval(&self) -> Interval {
+        self.interval
     }
 }
 

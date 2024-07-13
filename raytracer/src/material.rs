@@ -30,7 +30,7 @@ impl Metal {
 impl Material for Metal {
     fn scatter(&self, hit_record: &mut HitRecord) {
         let reflected = hit_record
-            .ray
+            .get_ray()
             .direction
             .reflect(hit_record.get_hit().normal);
         let reflected = reflected.normalize() + Vec3::random_unit_vector() * self.fuzz;
@@ -62,7 +62,7 @@ impl Material for Dielectric {
         } else {
             self.refraction_index
         };
-        let unit_direction = hit_record.ray.direction.normalize();
+        let unit_direction = hit_record.get_ray().direction.normalize();
         let normal = hit_record.get_hit().normal;
         let cos_theta = (-unit_direction).dot(normal);
         let sin_theta = (1.0 - cos_theta * cos_theta).sqrt();

@@ -77,6 +77,10 @@ impl Vec3 {
         }
     }
 
+    pub fn random_planar_unit_vector() -> Vec3 {
+        Vec3::random_in_unit_disk().normalize()
+    }
+
     // return a random vector in the unit hemisphere with cosine distribution
     pub fn random_cosine_direction() -> Vec3 {
         let r1 = rand::random::<f64>();
