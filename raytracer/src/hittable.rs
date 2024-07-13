@@ -158,6 +158,10 @@ impl HitRecord {
     pub fn get_interval(&self) -> Interval {
         self.interval
     }
+
+    pub fn set_interval(&mut self, interval: Interval) { // you may call this for restoring the interval
+        self.interval = interval;
+    }
 }
 
 pub trait Hittable: Sync + Send {

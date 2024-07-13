@@ -17,10 +17,10 @@ fn create_lambertian(
     center: Vec3,
     radius: f64,
     albedo: Color,
-) -> Object<Edge<Sphere>, TexturedMaterial<SolidColor, Lambertian>> {
+) -> Object<Sphere, TexturedMaterial<SolidColor, Lambertian>> {
     Object::new(
-        Edge::new(0.01, Sphere::new(center, radius)),
-        TexturedMaterial::new(SolidColor::new(Color::BLACK), Lambertian),
+        Sphere::new(center, radius),
+        TexturedMaterial::new(SolidColor::new(albedo), Lambertian),
     )
 }
 
@@ -166,14 +166,13 @@ fn create_cube_rotated_smoke(
 
 fn bouncing_spheres() {
     let mut world = WorldBuilder::default();
-    world.set_background(Color::new(0.7, 0.8, 1.0));
     world.add_object(create_lambertian_checker(
         Vec3::new(0.0, -1000.0, 0.0),
         1000.0,
     ));
     let mut rng = rand::thread_rng();
-    for a in -2..2 {
-        for b in -2..2 {
+    for a in -11..11 {
+        for b in -11..11 {
             let choose_mat = rng.gen::<f64>();
             let center = Vec3::new(
                 a as f64 + 0.9 * rng.gen::<f64>(),
@@ -181,12 +180,29 @@ fn bouncing_spheres() {
                 b as f64 + 0.9 * rng.gen::<f64>(),
             );
             if (center - Vec3::new(4.0, 0.2, 0.0)).length() > 0.9 {
-                if choose_mat < 0.8 {
-                    world.add_object(create_lambertian_moving(
-                        center,
-                        0.2,
-                        Color::random(0.0, 1.0).blend(Color::random(0.0, 1.0), BlendMode::Mul),
-                        Vec3::new(0.0, rng.gen_range(0.0..0.5), 0.0),
+                if choose_mat < 0.4 {
+                    world.add_object(Object::new(
+                        Edge::new(0.02, 10, Sphere::new(center, 0.2)),
+                        TexturedMaterial::new(
+                            SolidColor::new(Color::random(0.0, 1.0)),
+                            Lambertian,
+                        ),
+                    ));
+                } else if choose_mat < 0.6 {
+                    world.add_object(Object::new(
+                        Edge::new(0.1, 10, ShapeList::cube(center - Vec3::new(0.2, 0.2, 0.2), center + Vec3::new(0.2, 0.2, 0.2))),
+                        TexturedMaterial::new(
+                            SolidColor::new(Color::random(0.0, 1.0)),
+                            Lambertian,
+                        ),
+                    ));
+                } else if choose_mat < 0.8 {
+                    world.add_object(Object::new(
+                        Moving::new(Vec3::new(0.0, rng.gen_range(0.0..0.5), 0.0), Edge::new(0.02, 10, Sphere::new(center, 0.2))),
+                        TexturedMaterial::new(
+                            SolidColor::new(Color::random(0.0, 1.0)),
+                            Lambertian,
+                        ),
                     ));
                 } else if choose_mat < 0.95 {
                     world.add_object(create_metal(

@@ -3,6 +3,7 @@ use std::fmt::Debug;
 
 use crate::aabb::AABB;
 use crate::bvh::ShapeList;
+use crate::color::Color;
 use crate::hittable::HitRecord;
 use crate::interval::Interval;
 use crate::onb::ONB;
@@ -13,7 +14,7 @@ use crate::vec3::Vec3;
 
 pub trait Shape: Sync + Send {
     // hit_record.ray is the original ray. (may contain the former hit info)
-    // if hit, set hit info before returning true
+    // if hit, set hit info and interval before returning true
     fn hit(&self, hit_record: &mut HitRecord) -> bool;
 
     // should return a new shape transformed by the matrix. you may call aabb() on the new shape to get the new bounding box
@@ -463,12 +464,13 @@ impl<T: Shape> Shape for ConstantMedium<T> {
 
 pub struct Edge<T: Shape> {
     radius: f64,
+    clarity: i32,
     shape: T,
 }
 
 impl<T: Shape> Edge<T> {
-    pub fn new(radius: f64, shape: T) -> Self {
-        Self { radius, shape }
+    pub fn new(radius: f64, clarity: i32, shape: T) -> Self {
+        Self { radius, clarity, shape }
     }
 }
 
@@ -479,12 +481,13 @@ impl<T: Shape> Shape for Edge<T> {
         if !self.shape.hit(hit_record) {
             return false;
         }
-        for _ in 0..50 {
+        for _ in 0..self.clarity {
             if !self.shape.hit(&mut HitRecord::new(hit_record.get_ray().offset(uvw.local(Vec3::random_in_unit_disk() * self.radius)))) {
+                hit_record.get_hit_mut().emission = Color::WHITE; // simply mark as edge. todo: pass the info to the material
                 return true;
             }
         }
-        false
+        true
     }
 
     fn transform(&mut self, matrix: Transform) {
