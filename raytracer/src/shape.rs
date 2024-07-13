@@ -222,11 +222,25 @@ impl Triangle {
             area,
         }
     }
+
+    pub fn with_normal(a: Vec3, b: Vec3, c: Vec3, normal: Vec3) -> Self {
+        let q = a;
+        let u = b - a;
+        let v = c - a;
+        if normal.dot(u * v) > 0.0 {
+            Triangle::new(q, u, v)
+        } else {
+            Triangle::new(q, v, u)
+        }
+    }
 }
 
 impl Shape for Triangle {
     fn hit(&self, hit_record: &mut HitRecord) -> bool {
         let ray = &hit_record.ray;
+        if ray.direction.dot(self.normal) > 0.0 {
+            return false;
+        } // back face culling
         let denominator = self.normal.dot(ray.direction);
         let t = (self.d - self.normal.dot(ray.origin)) / denominator;
         if !ray.interval.contains(t) {
@@ -295,37 +309,71 @@ impl ShapeList {
         let dy = Vec3::new(0.0, aabb.y.length(), 0.0);
         let dz = Vec3::new(0.0, 0.0, aabb.z.length());
         let mut quads = ShapeList::default();
-        quads.push(Triangle::new(
+        quads.push(Quad::new(
             Vec3::new(min_pos.x, min_pos.y, max_pos.z),
             dx,
             dy,
         ));
-        quads.push(Triangle::new(
+        quads.push(Quad::new(
             Vec3::new(max_pos.x, min_pos.y, max_pos.z),
             -dz,
             dy,
         ));
-        quads.push(Triangle::new(
+        quads.push(Quad::new(
             Vec3::new(max_pos.x, min_pos.y, min_pos.z),
             -dx,
             dy,
         ));
-        quads.push(Triangle::new(
+        quads.push(Quad::new(
             Vec3::new(min_pos.x, min_pos.y, min_pos.z),
             dz,
             dy,
         ));
-        quads.push(Triangle::new(
+        quads.push(Quad::new(
             Vec3::new(min_pos.x, max_pos.y, max_pos.z),
             dx,
             -dz,
         ));
-        quads.push(Triangle::new(
+        quads.push(Quad::new(
             Vec3::new(min_pos.x, min_pos.y, min_pos.z),
             dx,
             dz,
         ));
         quads
+    }
+
+    pub fn load_obj(path: &str) -> ShapeList {
+        let cornell_box = tobj::load_obj(path, &tobj::OFFLINE_RENDERING_LOAD_OPTIONS);
+        let (models, _materials) = cornell_box.unwrap();
+        let mut traingles = ShapeList::default();
+        for m in models {
+            let mesh = m.mesh;
+            mesh.indices.chunks(3).for_each(|i| {
+                let a = Vec3::new(
+                    mesh.positions[i[0] as usize * 3],
+                    mesh.positions[i[0] as usize * 3 + 1],
+                    mesh.positions[i[0] as usize * 3 + 2],
+                );
+                let b = Vec3::new(
+                    mesh.positions[i[1] as usize * 3],
+                    mesh.positions[i[1] as usize * 3 + 1],
+                    mesh.positions[i[1] as usize * 3 + 2],
+                );
+                let c = Vec3::new(
+                    mesh.positions[i[2] as usize * 3],
+                    mesh.positions[i[2] as usize * 3 + 1],
+                    mesh.positions[i[2] as usize * 3 + 2],
+                );
+                let normal = Vec3::new(
+                    mesh.normals[mesh.normal_indices[i[0] as usize] as usize * 3],
+                    mesh.normals[mesh.normal_indices[i[0] as usize] as usize * 3 + 1],
+                    mesh.normals[mesh.normal_indices[i[0] as usize] as usize * 3 + 2],
+                ); // simply use the first normal. three normals are expected to be the same
+                let triangle = Triangle::with_normal(a, b, c, normal);
+                traingles.push(triangle);
+            });
+        }
+        traingles
     }
 }
 

@@ -15,4 +15,3 @@ pub mod shape;
 pub mod texture;
 pub mod transform;
 pub mod vec3;
-pub mod obj;
