@@ -314,32 +314,32 @@ impl ShapeList {
             Vec3::new(min_pos.x, min_pos.y, max_pos.z),
             dx,
             dy,
-        ));
+        )); // positive z
         quads.push(Quad::new(
             Vec3::new(max_pos.x, min_pos.y, max_pos.z),
             -dz,
             dy,
-        ));
+        )); // positive x
         quads.push(Quad::new(
             Vec3::new(max_pos.x, min_pos.y, min_pos.z),
             -dx,
             dy,
-        ));
+        )); // negative z
         quads.push(Quad::new(
             Vec3::new(min_pos.x, min_pos.y, min_pos.z),
             dz,
             dy,
-        ));
+        )); // negative x
         quads.push(Quad::new(
             Vec3::new(min_pos.x, max_pos.y, max_pos.z),
             dx,
             -dz,
-        ));
+        )); // positive y
         quads.push(Quad::new(
             Vec3::new(min_pos.x, min_pos.y, min_pos.z),
             dx,
             dz,
-        ));
+        )); // negative y
         quads
     }
 
@@ -477,7 +477,6 @@ impl<T: Shape> Edge<T> {
 impl<T: Shape> Shape for Edge<T> {
     fn hit(&self, hit_record: &mut HitRecord) -> bool {
         let uvw = ONB::normal(hit_record.get_ray().direction);
-        let interval = hit_record.get_interval();
         if !self.shape.hit(hit_record) {
             return false;
         }

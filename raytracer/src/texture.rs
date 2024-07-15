@@ -98,8 +98,7 @@ impl NoiseTexture {
 impl Texture for NoiseTexture {
     fn value(&self, hit_record: &HitRecord) -> Color {
         let p = hit_record.get_hit().position;
-        Color::WHITE
-            .lighten(0.5 * (1.0 + (self.scale * p.z + 10.0 * self.noise.turbulence(p, 7)).sin()))
+        Color::gray(0.5 * (1.0 + (self.scale * p.z + 10.0 * self.noise.turbulence(p, 7)).sin()))
     }
 }
 

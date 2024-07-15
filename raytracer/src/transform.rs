@@ -58,7 +58,20 @@ impl Transform {
         ret
     }
 
-    pub fn rotate_y(radians: f64) -> Self {
+    pub fn rotate_x(angle: f64) -> Self {
+        let radians = angle.to_radians();
+        let mut ret = Self::default();
+        let c = radians.cos();
+        let s = radians.sin();
+        ret.matrix[1][1] = c;
+        ret.matrix[1][2] = -s;
+        ret.matrix[2][1] = s;
+        ret.matrix[2][2] = c;
+        ret
+    }
+
+    pub fn rotate_y(angle: f64) -> Self {
+        let radians = angle.to_radians();
         let mut ret = Self::default();
         let c = radians.cos();
         let s = radians.sin();
@@ -66,6 +79,18 @@ impl Transform {
         ret.matrix[0][2] = s;
         ret.matrix[2][0] = -s;
         ret.matrix[2][2] = c;
+        ret
+    }
+
+    pub fn rotate_z(angle: f64) -> Self {
+        let radians = angle.to_radians();
+        let mut ret = Self::default();
+        let c = radians.cos();
+        let s = radians.sin();
+        ret.matrix[0][0] = c;
+        ret.matrix[0][1] = -s;
+        ret.matrix[1][0] = s;
+        ret.matrix[1][1] = c;
         ret
     }
 }

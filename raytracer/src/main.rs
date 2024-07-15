@@ -1,9 +1,10 @@
 use rand::Rng;
+
 use raytracer::bvh::ShapeList;
 use raytracer::camera::{Camera, ImageParam, LensParam, PerspectiveParam};
-use raytracer::color::{BlendMode, Color};
+use raytracer::color::Color;
 use raytracer::hittable::{Object, WorldBuilder};
-use raytracer::material::{Dielectric, Isotropic, Lambertian, Metal};
+use raytracer::material::{Dielectric, Isotropic, Lambertian, Metal, Translucent};
 use raytracer::noise::Noise;
 use raytracer::raytracer::RayTracer;
 use raytracer::shape::{ConstantMedium, Edge, Moving, Quad, Shape, Sphere};
@@ -139,13 +140,13 @@ fn create_cube_rotated(
     albedo: Color,
     translate: Vec3,
     angle: f64,
-) -> Object<ShapeList, TexturedMaterial<SolidColor, Lambertian>> {
+) -> Object<ShapeList, Translucent> {
     let mut cube = ShapeList::cube(Vec3::default(), a);
-    cube.transform(Transform::rotate_y(angle.to_radians()));
+    cube.transform(Transform::rotate_y(angle));
     cube.transform(Transform::translate(translate));
     Object::new(
         cube,
-        TexturedMaterial::new(SolidColor::new(albedo), Lambertian),
+        Translucent::new(1.5),
     )
 }
 
@@ -156,7 +157,7 @@ fn create_cube_rotated_smoke(
     angle: f64,
 ) -> Object<ConstantMedium<ShapeList>, TexturedMaterial<SolidColor, Isotropic>> {
     let mut cube = ShapeList::cube(Vec3::default(), a);
-    cube.transform(Transform::rotate_y(angle.to_radians()));
+    cube.transform(Transform::rotate_y(angle));
     cube.transform(Transform::translate(translate));
     Object::new(
         ConstantMedium::new(0.01, cube),
@@ -508,19 +509,18 @@ fn cornell_box() {
         Vec3::new(0.0, 555.0, 0.0),
         Color::new(0.73, 0.73, 0.73),
     ));
-    world.add_object(create_cube_rotated(
-        Vec3::new(165.0, 330.0, 165.0),
-        Color::new(0.73, 0.73, 0.73),
-        Vec3::new(265.0, 0.0, 295.0),
-        15.0,
+    let mut cube = ShapeList::cube(Vec3::default(), Vec3::new(300.0, 10.0, 300.0));
+    cube.transform(Transform::rotate_z(10.0));
+    cube.transform(Transform::rotate_x(-60.0));
+    cube.transform(Transform::translate(Vec3::new(150.0, 150.0, 150.0)));
+    world.add_object(Object::new(cube,
+        Translucent::new(1.5),
     ));
-    world.add_object(create_dielectric(Vec3::new(190.0, 90.0, 190.0), 90.0, 1.5));
     world.add_light(Quad::new(
         Vec3::new(343.0, 554.0, 332.0),
         Vec3::new(-130.0, 0.0, 0.0),
         Vec3::new(0.0, 0.0, -105.0),
     ));
-    world.add_light(Sphere::new(Vec3::new(190.0, 90.0, 190.0), 90.0));
 
     let image_width = 600;
     let image_height = 600;
@@ -691,7 +691,7 @@ fn final_scene(image_width: u32, sample_per_pixel: u32, max_depth: u32) {
     let mut spheres = ShapeList::default();
     for _ in 0..ns {
         let mut sphere = Sphere::new(Vec3::random(0.0, 165.0), 10.0);
-        sphere.transform(Transform::rotate_y(15.0f64.to_radians()));
+        sphere.transform(Transform::rotate_y(15.0));
         sphere.transform(Transform::translate(Vec3::new(-100.0, 270.0, 395.0)));
         spheres.push(sphere);
     }
@@ -731,7 +731,7 @@ fn final_scene(image_width: u32, sample_per_pixel: u32, max_depth: u32) {
 }
 
 fn main() {
-    let x = 1;
+    let x = 7;
     match x {
         1 => bouncing_spheres(),
         2 => checkered_spheres(),

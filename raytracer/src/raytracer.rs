@@ -5,7 +5,7 @@ use indicatif::ProgressBar;
 
 use crate::camera::Camera;
 use crate::canvas::Canvas;
-use crate::color::{BlendMode, Color};
+use crate::color::Color;
 use crate::hittable::Scatter::{Absorb, ScatterPDF, ScatterRay};
 use crate::hittable::{HitRecord, Hittable, World};
 use crate::ray::Ray;
@@ -40,16 +40,11 @@ impl RayTracer {
         match &hit_record.get_hit().scatter {
             Absorb => hit_record.get_hit().emission,
             ScatterRay(_) => self
-                .raytrace(hit_record.move_hit().scatter.move_ray(), left_depth - 1)
-                .blend(attenuation, BlendMode::Mul)
-                .blend(emission, BlendMode::Add),
+                .raytrace(hit_record.move_hit().scatter.move_ray(), left_depth - 1) * attenuation + emission,
             ScatterPDF(_) => {
                 let (scatter, mixture_prob, scatter_prob) =
                     hit_record.generate_scatter(&self.world.light_pdf);
-                self.raytrace(scatter, left_depth - 1)
-                    .blend(attenuation, BlendMode::Mul)
-                    .lighten(scatter_prob / mixture_prob)
-                    .blend(emission, BlendMode::Add)
+                self.raytrace(scatter, left_depth - 1) * attenuation * (scatter_prob / mixture_prob) + emission
             }
         }
     }
@@ -70,14 +65,14 @@ impl RayTracer {
                 for j in 0..height {
                     let ray = raytracer.camera.get_ray_at(i, j, si, sj);
                     let color = Self::raytrace(&raytracer, ray, raytracer.max_depth).fix();
-                    result[(i * height + j) as usize].blend_assign(color, BlendMode::Add);
+                    result[(i * height + j) as usize] += color;
                 }
             }
             progress_bar.inc(1);
         }
         let mut output = output.lock().unwrap();
         for i in 0..image_size {
-            output[i].blend_assign(result[i], BlendMode::Add);
+            output[i] += result[i];
         }
     }
 
@@ -120,7 +115,7 @@ impl RayTracer {
                 raytracer.canvas.write(
                     i,
                     j,
-                    output[(i * height + j) as usize].lighten(lighten_factor),
+                    output[(i * height + j) as usize] * lighten_factor,
                 );
             }
         }

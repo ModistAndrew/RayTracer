@@ -1,3 +1,4 @@
+use std::ops::{Add, AddAssign, Div, DivAssign, Mul, MulAssign, Sub, SubAssign};
 use crate::interval::Interval;
 use image::Rgb;
 use rand::Rng;
@@ -7,20 +8,6 @@ pub struct Color {
     pub r: f64,
     pub g: f64,
     pub b: f64,
-}
-
-pub enum BlendMode {
-    Add,
-    Mul,
-}
-
-impl BlendMode {
-    pub fn apply(&self, a: f64, b: f64) -> f64 {
-        match self {
-            Self::Add => a + b,
-            Self::Mul => a * b,
-        }
-    }
 }
 
 impl Color {
@@ -38,21 +25,12 @@ impl Color {
         Self { r, g, b }
     }
 
-    pub fn blend(self, other: Color, mode: BlendMode) -> Color {
-        let r = mode.apply(self.r, other.r);
-        let g = mode.apply(self.g, other.g);
-        let b = mode.apply(self.b, other.b);
-        Self::new(r, g, b)
-    }
-
-    pub fn blend_assign(&mut self, other: Color, mode: BlendMode) {
-        self.r = mode.apply(self.r, other.r);
-        self.g = mode.apply(self.g, other.g);
-        self.b = mode.apply(self.b, other.b);
-    }
-
-    pub fn lighten(self, factor: f64) -> Color {
-        Self::new(self.r * factor, self.g * factor, self.b * factor)
+    pub fn gray(value: f64) -> Self {
+        Self {
+            r: value,
+            g: value,
+            b: value,
+        }
     }
 
     fn linear_to_gamma(linear_component: f64) -> f64 {
@@ -82,6 +60,78 @@ impl Color {
         let g = if self.g.is_normal() { self.g } else { 0.0 };
         let b = if self.b.is_normal() { self.b } else { 0.0 };
         Self::new(r, g, b)
+    }
+}
+
+impl Add for Color {
+    type Output = Self;
+
+    fn add(self, other: Self) -> Self {
+        Self::new(self.r + other.r, self.g + other.g, self.b + other.b)
+    }
+}
+
+impl Sub for Color {
+    type Output = Self;
+
+    fn sub(self, other: Self) -> Self {
+        Self::new(self.r - other.r, self.g - other.g, self.b - other.b)
+    }
+}
+
+impl Mul for Color {
+    type Output = Self;
+
+    fn mul(self, other: Self) -> Self {
+        Self::new(self.r * other.r, self.g * other.g, self.b * other.b)
+    }
+}
+
+impl Mul<f64> for Color {
+    type Output = Self;
+
+    fn mul(self, scalar: f64) -> Self {
+        Self::new(self.r * scalar, self.g * scalar, self.b * scalar)
+    }
+}
+
+impl Div<f64> for Color {
+    type Output = Self;
+
+    fn div(self, scalar: f64) -> Self {
+        Self::new(self.r / scalar, self.g / scalar, self.b / scalar)
+    }
+}
+
+impl AddAssign for Color {
+    fn add_assign(&mut self, other: Self) {
+        self.r += other.r;
+        self.g += other.g;
+        self.b += other.b;
+    }
+}
+
+impl SubAssign for Color {
+    fn sub_assign(&mut self, other: Self) {
+        self.r -= other.r;
+        self.g -= other.g;
+        self.b -= other.b;
+    }
+}
+
+impl MulAssign<f64> for Color {
+    fn mul_assign(&mut self, scalar: f64) {
+        self.r *= scalar;
+        self.g *= scalar;
+        self.b *= scalar;
+    }
+}
+
+impl DivAssign<f64> for Color {
+    fn div_assign(&mut self, scalar: f64) {
+        self.r /= scalar;
+        self.g /= scalar;
+        self.b /= scalar;
     }
 }
 

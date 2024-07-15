@@ -106,16 +106,6 @@ impl Vec3 {
         let y = phi.sin() * (1.0 - z * z).sqrt();
         Vec3::new(x, y, z)
     }
-
-    pub fn rotate_y(self, radians: f64) -> Vec3 {
-        let sin_theta = radians.sin();
-        let cos_theta = radians.cos();
-        Vec3::new(
-            self.x * cos_theta + self.z * sin_theta,
-            self.y,
-            -self.x * sin_theta + self.z * cos_theta,
-        )
-    }
 }
 
 impl Neg for Vec3 {
