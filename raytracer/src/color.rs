@@ -1,7 +1,7 @@
-use std::ops::{Add, AddAssign, Div, DivAssign, Mul, MulAssign, Sub, SubAssign};
 use crate::interval::Interval;
 use image::Rgb;
 use rand::Rng;
+use std::ops::{Add, AddAssign, Div, DivAssign, Mul, MulAssign, Sub, SubAssign};
 
 #[derive(Clone, Copy, Debug)]
 pub struct Color {

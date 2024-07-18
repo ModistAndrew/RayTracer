@@ -195,112 +195,6 @@ impl ShapePDFProvider for Quad {
     }
 }
 
-#[derive(Debug)]
-pub struct Triangle {
-    q: Vec3,
-    u: Vec3,
-    v: Vec3,
-    w: Vec3,
-    normal: Vec3,
-    d: f64,
-    area: f64,
-}
-
-impl Triangle {
-    pub fn new(q: Vec3, u: Vec3, v: Vec3) -> Self {
-        let n = u * v;
-        let normal = n.normalize();
-        let d = normal.dot(q);
-        let w = n / n.length_squared();
-        let area = n.length() / 2.0;
-        Self {
-            q,
-            u,
-            v,
-            w,
-            normal,
-            d,
-            area,
-        }
-    }
-
-    pub fn with_normal(a: Vec3, b: Vec3, c: Vec3, normal: Vec3) -> Self {
-        let q = a;
-        let u = b - a;
-        let v = c - a;
-        if normal.dot(u * v) > 0.0 {
-            Triangle::new(q, u, v)
-        } else {
-            Triangle::new(q, v, u)
-        }
-    }
-}
-
-impl Shape for Triangle {
-    fn hit(&self, hit_record: &mut HitRecord) -> bool {
-        let ray = hit_record.get_ray();
-        if ray.direction.dot(self.normal) > 0.0 {
-            return false;
-        } // back face culling
-        let denominator = self.normal.dot(ray.direction);
-        let t = (self.d - self.normal.dot(ray.origin)) / denominator;
-        if !hit_record.get_interval().contains(t) {
-            return false;
-        }
-        let intersection = ray.at(t);
-        let planar_hit_pos = intersection - self.q;
-        let alpha = self.w.dot(planar_hit_pos * self.v);
-        let beta = self.w.dot(self.u * planar_hit_pos);
-        if alpha >= 0.0 && beta >= 0.0 && alpha + beta <= 1.0 {
-            hit_record.set_hit(t, self.normal, UV::new(alpha, beta));
-            return true;
-        }
-        false
-    }
-
-    fn transform(&mut self, matrix: Transform) {
-        self.q = matrix.pos(self.q);
-        self.u = matrix.direction(self.u);
-        self.v = matrix.direction(self.v);
-        let n = self.u * self.v;
-        self.normal = n.normalize();
-        self.d = self.normal.dot(self.q);
-        self.w = n / n.length_squared();
-        self.area = n.length() / 2.0;
-    }
-
-    fn aabb(&self) -> AABB {
-        AABB::union(
-            AABB::from_vec3(self.q, self.q + self.u),
-            AABB::from_vec3(self.q, self.q + self.v),
-        )
-    }
-}
-
-impl ShapePDFProvider for Triangle {
-    fn prob(&self, origin: Vec3, direction: Vec3) -> f64 {
-        let ray = Ray::new(origin, direction);
-        let mut hit_record = HitRecord::new(ray);
-        if !self.hit(&mut hit_record) {
-            return 0.0;
-        }
-        let hit = hit_record.get_hit();
-        let distance_squared = hit.t * hit.t * direction.length_squared();
-        let cosine = -direction.dot(hit.normal) / direction.length();
-        distance_squared / (cosine * self.area)
-    }
-
-    fn generate(&self, origin: Vec3) -> Vec3 {
-        let mut x = rand::random::<f64>();
-        let mut y = rand::random::<f64>();
-        if x + y > 1.0 {
-            x = 1.0 - x;
-            y = 1.0 - y;
-        }
-        self.q + self.u * x + self.v * y - origin
-    }
-}
-
 impl ShapeList {
     pub fn cube(a: Vec3, b: Vec3) -> ShapeList {
         let aabb = AABB::from_vec3(a, b);
@@ -341,40 +235,6 @@ impl ShapeList {
             dz,
         )); // negative y
         quads
-    }
-
-    pub fn load_obj(path: &str) -> ShapeList {
-        let cornell_box = tobj::load_obj(path, &tobj::OFFLINE_RENDERING_LOAD_OPTIONS);
-        let (models, _materials) = cornell_box.unwrap();
-        let mut traingles = ShapeList::default();
-        for m in models {
-            let mesh = m.mesh;
-            mesh.indices.chunks(3).for_each(|i| {
-                let a = Vec3::new(
-                    mesh.positions[i[0] as usize * 3],
-                    mesh.positions[i[0] as usize * 3 + 1],
-                    mesh.positions[i[0] as usize * 3 + 2],
-                );
-                let b = Vec3::new(
-                    mesh.positions[i[1] as usize * 3],
-                    mesh.positions[i[1] as usize * 3 + 1],
-                    mesh.positions[i[1] as usize * 3 + 2],
-                );
-                let c = Vec3::new(
-                    mesh.positions[i[2] as usize * 3],
-                    mesh.positions[i[2] as usize * 3 + 1],
-                    mesh.positions[i[2] as usize * 3 + 2],
-                );
-                let normal = Vec3::new(
-                    mesh.normals[mesh.normal_indices[i[0] as usize] as usize * 3],
-                    mesh.normals[mesh.normal_indices[i[0] as usize] as usize * 3 + 1],
-                    mesh.normals[mesh.normal_indices[i[0] as usize] as usize * 3 + 2],
-                ); // simply use the first normal. three normals are expected to be the same
-                let triangle = Triangle::with_normal(a, b, c, normal);
-                traingles.push(triangle);
-            });
-        }
-        traingles
     }
 }
 
@@ -470,7 +330,11 @@ pub struct Edge<T: Shape> {
 
 impl<T: Shape> Edge<T> {
     pub fn new(radius: f64, clarity: i32, shape: T) -> Self {
-        Self { radius, clarity, shape }
+        Self {
+            radius,
+            clarity,
+            shape,
+        }
     }
 }
 
@@ -481,7 +345,11 @@ impl<T: Shape> Shape for Edge<T> {
             return false;
         }
         for _ in 0..self.clarity {
-            if !self.shape.hit(&mut HitRecord::new(hit_record.get_ray().offset(uvw.local(Vec3::random_in_unit_disk() * self.radius)))) {
+            if !self.shape.hit(&mut HitRecord::new(
+                hit_record
+                    .get_ray()
+                    .offset(uvw.local(Vec3::random_in_unit_disk() * self.radius)),
+            )) {
                 hit_record.get_hit_mut().emission = Color::WHITE; // simply mark as edge. todo: pass the info to the material
                 return true;
             }

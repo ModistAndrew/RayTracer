@@ -22,9 +22,10 @@ impl Interval {
         max: f64::INFINITY,
     };
     pub const UNIT: Self = Self { min: 0.0, max: 1.0 };
+    const DELTA: f64 = 0.0001;
     // leave a small gap to avoid sticking in the same position
     pub const POSITIVE: Self = Self {
-        min: 0.001,
+        min: Self::DELTA,
         max: f64::INFINITY,
     };
     pub fn new(min: f64, max: f64) -> Self {
@@ -73,6 +74,10 @@ impl Interval {
 
     pub fn include(self, other: f64) -> Self {
         Interval::new(self.min.min(other), self.max.max(other))
+    }
+
+    pub fn pad(self) -> Self {
+        Interval::new(self.min, self.max.max(self.max + Self::DELTA))
     }
 }
 

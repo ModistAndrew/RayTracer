@@ -6,14 +6,16 @@ use crate::vec3::Vec3;
 
 pub struct PerspectiveParam {
     pub look_from: Vec3,
+    // blender (x, y, z) -> (x, z, -y).
+    // the exported obj file is transformed automatically, but you have to do it manually when hardcoding the camera position.
     pub look_at: Vec3,
     pub view_up: Vec3,
 }
 
 pub struct LensParam {
-    pub fov: f64,
+    pub fov: f64, // fov of width in degrees
     pub defocus_angle: f64,
-    pub focus_dist: f64,
+    pub focus_dist: f64, // distance from the camera to the focal plane. should be positive.
 }
 
 pub struct ImageParam {
@@ -45,10 +47,10 @@ impl Camera {
             perspective_param.view_up,
         );
 
-        let viewport_height =
-            2.0 * (lens_param.fov.to_radians() / 2.0).tan() * lens_param.focus_dist;
         let viewport_width =
-            viewport_height * canvas_param.image_width as f64 / canvas_param.image_height as f64;
+            2.0 * (lens_param.fov.to_radians() / 2.0).tan() * lens_param.focus_dist;
+        let viewport_height =
+            viewport_width * canvas_param.image_height as f64 / canvas_param.image_width as f64;
 
         let pixel_width_ratio = 1.0 / canvas_param.image_width as f64;
         let pixel_height_ratio = 1.0 / canvas_param.image_height as f64;

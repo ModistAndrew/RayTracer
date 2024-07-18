@@ -52,7 +52,10 @@ impl HittableTree {
 
 impl Hittable for HittableTree {
     fn hit(&self, hit_record: &mut HitRecord) -> bool {
-        if !self.aabb.hit(&hit_record.get_ray(), hit_record.get_interval()) {
+        if !self
+            .aabb
+            .hit(hit_record.get_ray(), hit_record.get_interval())
+        {
             return false;
         }
         // note that we don't short-circuit here, because both children need to be hit
@@ -142,7 +145,10 @@ impl ShapeTree {
 
 impl Shape for ShapeTree {
     fn hit(&self, hit_record: &mut HitRecord) -> bool {
-        if !self.aabb.hit(&hit_record.get_ray(), hit_record.get_interval()) {
+        if !self
+            .aabb
+            .hit(hit_record.get_ray(), hit_record.get_interval())
+        {
             return false;
         }
         // note that we don't short-circuit here, because both children need to be hit

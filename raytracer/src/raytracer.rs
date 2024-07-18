@@ -39,12 +39,16 @@ impl RayTracer {
         let attenuation = hit_record.get_hit().attenuation;
         match &hit_record.get_hit().scatter {
             Absorb => hit_record.get_hit().emission,
-            ScatterRay(_) => self
-                .raytrace(hit_record.move_hit().scatter.move_ray(), left_depth - 1) * attenuation + emission,
+            ScatterRay(_) => {
+                self.raytrace(hit_record.move_hit().scatter.move_ray(), left_depth - 1)
+                    * attenuation
+                    + emission
+            }
             ScatterPDF(_) => {
                 let (scatter, mixture_prob, scatter_prob) =
                     hit_record.generate_scatter(&self.world.light_pdf);
-                self.raytrace(scatter, left_depth - 1) * attenuation * (scatter_prob / mixture_prob) + emission
+                self.raytrace(scatter, left_depth - 1) * attenuation * (scatter_prob / mixture_prob)
+                    + emission
             }
         }
     }
@@ -112,11 +116,9 @@ impl RayTracer {
         let lighten_factor = 1.0 / (sqrt_spp * sqrt_spp) as f64;
         for i in 0..width {
             for j in 0..height {
-                raytracer.canvas.write(
-                    i,
-                    j,
-                    output[(i * height + j) as usize] * lighten_factor,
-                );
+                raytracer
+                    .canvas
+                    .write(i, j, output[(i * height + j) as usize] * lighten_factor);
             }
         }
         raytracer

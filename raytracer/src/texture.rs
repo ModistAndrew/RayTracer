@@ -3,8 +3,9 @@ use crate::color::Color;
 use crate::hittable::HitRecord;
 use crate::material::Material;
 use crate::noise::Noise;
+use std::ops::{Add, Mul, Sub};
 
-#[derive(Clone, Copy, Default)]
+#[derive(Clone, Copy, Default, Debug)]
 pub struct UV {
     pub u: f64,
     pub v: f64,
@@ -13,6 +14,39 @@ pub struct UV {
 impl UV {
     pub fn new(u: f64, v: f64) -> Self {
         Self { u, v }
+    }
+}
+
+impl Add for UV {
+    type Output = Self;
+
+    fn add(self, other: Self) -> Self {
+        Self {
+            u: self.u + other.u,
+            v: self.v + other.v,
+        }
+    }
+}
+
+impl Sub for UV {
+    type Output = Self;
+
+    fn sub(self, other: Self) -> Self {
+        Self {
+            u: self.u - other.u,
+            v: self.v - other.v,
+        }
+    }
+}
+
+impl Mul<f64> for UV {
+    type Output = Self;
+
+    fn mul(self, rhs: f64) -> Self {
+        Self {
+            u: self.u * rhs,
+            v: self.v * rhs,
+        }
     }
 }
 

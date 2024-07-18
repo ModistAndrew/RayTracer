@@ -86,6 +86,14 @@ impl AABB {
     pub fn max_pos(&self) -> Vec3 {
         Vec3::new(self.x.max, self.y.max, self.z.max)
     }
+
+    pub fn pad(self) -> Self {
+        AABB::new(
+            self.x.pad(),
+            self.y.pad(),
+            self.z.pad(),
+        )
+    }
 }
 
 impl Add<Vec3> for AABB {

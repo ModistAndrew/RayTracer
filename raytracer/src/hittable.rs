@@ -58,8 +58,9 @@ pub struct HitInfo {
 }
 
 pub struct HitRecord {
-    ray: Ray, // the original ray
+    ray: Ray,           // the original ray
     interval: Interval, // mutable
+    last_max: f64,      // for restoring interval
     hit_info: Option<HitInfo>,
 }
 
@@ -69,6 +70,7 @@ impl HitRecord {
         Self {
             ray,
             interval: Interval::POSITIVE,
+            last_max: f64::INFINITY,
             hit_info: None,
         }
     }
@@ -91,7 +93,12 @@ impl HitRecord {
             attenuation: Color::WHITE,
             scatter: Absorb,
         });
+        self.last_max = self.interval.max;
         self.interval.limit_max(t)
+    }
+
+    pub fn restore_interval(&mut self) {
+        self.interval.max = self.last_max;
     }
 
     pub fn set_scatter_ray(&mut self, direction: Vec3) {
@@ -151,7 +158,8 @@ impl HitRecord {
         &self.ray
     }
 
-    pub fn get_ray_mut(&mut self) -> &mut Ray { // just for decoration. should restore the ray
+    pub fn get_ray_mut(&mut self) -> &mut Ray {
+        // just for decoration. should restore the ray
         &mut self.ray
     }
 
@@ -159,7 +167,8 @@ impl HitRecord {
         self.interval
     }
 
-    pub fn set_interval(&mut self, interval: Interval) { // you may call this for restoring the interval
+    pub fn set_interval(&mut self, interval: Interval) {
+        // you may call this for restoring the interval
         self.interval = interval;
     }
 }
@@ -224,8 +233,12 @@ pub struct WorldBuilder {
 }
 
 impl WorldBuilder {
-    pub fn add_object<T: Hittable + 'static>(&mut self, object: T) {
+    pub fn add<T: Hittable + 'static>(&mut self, object: T) {
         self.objects.push(Box::new(object));
+    }
+
+    pub fn add_object<S: Shape + 'static, M: Material + 'static>(&mut self, shape: S, material: M) {
+        self.add(Object::new(shape, material));
     }
 
     pub fn add_light<T: ShapePDFProvider + 'static>(&mut self, shape: T) {

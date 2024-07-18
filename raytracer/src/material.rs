@@ -94,9 +94,7 @@ pub struct Translucent {
 
 impl Translucent {
     pub fn new(refraction_index: f64) -> Self {
-        Self {
-            refraction_index,
-        }
+        Self { refraction_index }
     }
 }
 
@@ -112,8 +110,7 @@ impl Material for Translucent {
         let cos_theta = (-unit_direction).dot(normal);
         let sin_theta = (1.0 - cos_theta * cos_theta).sqrt();
         let mut direction = unit_direction.reflect(normal);
-        if refraction_ratio * sin_theta <= 1.0
-        {
+        if refraction_ratio * sin_theta <= 1.0 {
             let color = Color::new(1.0, sin_theta, 0.0);
             if rand::random::<bool>() {
                 let r_out_perp = (unit_direction + normal * cos_theta) * refraction_ratio;
