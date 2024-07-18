@@ -92,8 +92,8 @@ impl Shape for Triangle {
 
     fn aabb(&self) -> AABB {
         AABB::union(
-            AABB::from_vec3(self.q, self.q + self.u),
-            AABB::from_vec3(self.q, self.q + self.v),
+            AABB::from_vec3(self.q, self.q + self.u + self.v),
+            AABB::from_vec3(self.q + self.u, self.q + self.v),
         )
     }
 }
@@ -204,7 +204,8 @@ impl Hittable for MeshObject {
             return false;
         }
         if self.textures.skip_render(hit_record) {
-            return false;
+            hit_record.set_scatter_pass();
+            return true;
         }
         self.material.scatter(hit_record);
         hit_record.get_hit_mut().attenuation = self.textures.get_color(hit_record);

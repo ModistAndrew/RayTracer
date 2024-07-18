@@ -60,7 +60,6 @@ pub struct HitInfo {
 pub struct HitRecord {
     ray: Ray,           // the original ray
     interval: Interval, // mutable
-    last_max: f64,      // for restoring interval
     hit_info: Option<HitInfo>,
 }
 
@@ -70,7 +69,6 @@ impl HitRecord {
         Self {
             ray,
             interval: Interval::POSITIVE,
-            last_max: f64::INFINITY,
             hit_info: None,
         }
     }
@@ -93,12 +91,7 @@ impl HitRecord {
             attenuation: Color::WHITE,
             scatter: Absorb,
         });
-        self.last_max = self.interval.max;
         self.interval.limit_max(t)
-    }
-
-    pub fn restore_interval(&mut self) {
-        self.interval.max = self.last_max;
     }
 
     pub fn set_scatter_ray(&mut self, direction: Vec3) {
@@ -112,6 +105,10 @@ impl HitRecord {
 
     pub fn set_scatter_absorb(&mut self) {
         self.get_hit_mut().scatter = Absorb
+    }
+
+    pub fn set_scatter_pass(&mut self) {
+        self.set_scatter_ray(self.ray.direction);
     }
 
     pub fn does_hit(&self) -> bool {
@@ -175,7 +172,8 @@ impl HitRecord {
 
 pub trait Hittable: Sync + Send {
     // hit_record.ray is the original ray.
-    // if hit, update hit_record.hit and scatter and return true
+    // if hit, update hit_record.hit and scatter and return true;
+    // otherwise, do no change and return false.
     fn hit(&self, hit_record: &mut HitRecord) -> bool;
 
     // return the bounding box for hit testing
@@ -203,19 +201,6 @@ impl<S: Shape, M: Material> Hittable for Object<S, M> {
 
     fn aabb(&self) -> AABB {
         self.shape.aabb()
-    }
-}
-
-#[derive(Default)]
-pub struct Empty;
-
-impl Hittable for Empty {
-    fn hit(&self, _hit_record: &mut HitRecord) -> bool {
-        false
-    }
-
-    fn aabb(&self) -> AABB {
-        AABB::default()
     }
 }
 
