@@ -3,7 +3,7 @@ use raytracer::canvas::Canvas;
 use raytracer::color::Color;
 use raytracer::hittable::WorldBuilder;
 use raytracer::material::{Dielectric, Emissive, Lambertian, Translucent};
-use raytracer::mesh::load_obj;
+use raytracer::model_loader::load_obj;
 use raytracer::raytracer::RayTracer;
 use raytracer::shape::Sphere;
 use raytracer::texture::{Atlas, ImageTexture, SolidColor};

@@ -32,10 +32,4 @@ impl Ray {
     pub fn offset(&self, v: Vec3) -> Self {
         self.new_ray(self.origin + v, self.direction)
     }
-
-    pub fn ray3(&self) -> Ray3 {
-        Ray3::new(self.origin.into(), self.direction.into())
-    }
 }
-
-pub type Ray3 = bvh::ray::Ray<f64, 3>;

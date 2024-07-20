@@ -1,5 +1,5 @@
 use crate::aabb::Aabb;
-use crate::bvh::{HittableTree, HittableTreeBuilder};
+use crate::bvh::{HittableTree, HittableList};
 use crate::color::Color;
 use crate::hit_record::HitRecord;
 use crate::material::Material;
@@ -39,7 +39,7 @@ pub struct World {
 
 #[derive(Default)]
 pub struct WorldBuilder {
-    objects: HittableTreeBuilder,
+    objects: HittableList,
     light_pdf: ShapePDF,
     background: Option<Color>,
 }

@@ -66,11 +66,11 @@ impl Hittable for HittableTree {
 }
 
 #[derive(Default)]
-pub struct HittableTreeBuilder {
+pub struct HittableList {
     hittable_list: Vec<Box<dyn Hittable>>,
 }
 
-impl HittableTreeBuilder {
+impl HittableList {
     pub fn push<T: Hittable + 'static>(&mut self, hittable: T) {
         self.hittable_list.push(Box::new(hittable));
     }
@@ -80,7 +80,7 @@ impl HittableTreeBuilder {
     }
 }
 
-impl Hittable for HittableTreeBuilder {
+impl Hittable for HittableList {
     fn hit(&self, hit_record: &mut HitRecord) -> bool {
         let mut hit_result = false;
         for hittable in &self.hittable_list {
@@ -156,11 +156,11 @@ impl Shape for ShapeTree {
 }
 
 #[derive(Default)]
-pub struct ShapeTreeBuilder {
+pub struct ShapeList {
     shape_list: Vec<Box<dyn Shape>>,
 }
 
-impl ShapeTreeBuilder {
+impl ShapeList {
     pub fn push<T: Shape + 'static>(&mut self, shape: T) {
         self.shape_list.push(Box::new(shape));
     }
@@ -170,7 +170,7 @@ impl ShapeTreeBuilder {
     }
 }
 
-impl Shape for ShapeTreeBuilder {
+impl Shape for ShapeList {
     fn hit(&self, hit_record: &mut HitRecord, atlas: &Atlas) -> bool {
         let mut hit = false;
         for shape in &self.shape_list {

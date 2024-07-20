@@ -1,7 +1,7 @@
 use std::collections::HashMap;
 
 use crate::aabb::Aabb;
-use crate::bvh::{ShapeTree, ShapeTreeBuilder};
+use crate::bvh::{ShapeTree, ShapeList};
 use crate::hit_record::HitRecord;
 use crate::shape::Shape;
 use crate::texture::{Atlas, UV};
@@ -90,7 +90,7 @@ pub fn load_obj(path: &str) -> HashMap<String, ShapeTree> {
     let (models, _materials) = obj.unwrap();
     let mut ret = HashMap::default();
     for model in models {
-        let mut triangles = ShapeTreeBuilder::default();
+        let mut triangles = ShapeList::default();
         let m = model.mesh;
         m.indices.chunks(3).for_each(|i| {
             let a = Vec3::new(

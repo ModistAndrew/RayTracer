@@ -75,10 +75,6 @@ impl Interval {
     pub fn include(self, other: f64) -> Self {
         Interval::new(self.min.min(other), self.max.max(other))
     }
-
-    pub fn pad(self) -> Self {
-        Interval::new(self.min, self.max.max(self.min + Self::DELTA))
-    }
 }
 
 impl Add<f64> for Interval {

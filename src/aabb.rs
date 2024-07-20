@@ -86,10 +86,6 @@ impl Aabb {
     pub fn max_pos(&self) -> Vec3 {
         Vec3::new(self.x.max, self.y.max, self.z.max)
     }
-
-    pub fn pad(self) -> Self {
-        Aabb::new(self.x.pad(), self.y.pad(), self.z.pad())
-    }
 }
 
 impl Add<Vec3> for Aabb {
@@ -118,23 +114,5 @@ impl Index<usize> for Aabb {
             2 => &self.z,
             _ => panic!("Index out of bounds"),
         }
-    }
-}
-
-pub type Aabb3 = bvh::aabb::Aabb<f64, 3>;
-
-impl From<Aabb> for Aabb3 {
-    fn from(aabb: Aabb) -> Self {
-        Aabb3::with_bounds(aabb.min_pos().into(), aabb.max_pos().into())
-    }
-}
-
-impl From<Aabb3> for Aabb {
-    fn from(aabb: Aabb3) -> Self {
-        Aabb::new(
-            Interval::new(aabb.min.x, aabb.max.x),
-            Interval::new(aabb.min.y, aabb.max.y),
-            Interval::new(aabb.min.z, aabb.max.z),
-        )
     }
 }

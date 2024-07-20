@@ -1,4 +1,3 @@
-use nalgebra::{Point3, Vector3};
 use rand::Rng;
 use std::f64::consts::PI;
 use std::ops::{
@@ -214,30 +213,6 @@ impl IndexMut<usize> for Vec3 {
             2 => &mut self.z,
             _ => panic!("index out of range"),
         }
-    }
-}
-
-impl From<Vec3> for Point3<f64> {
-    fn from(v: Vec3) -> Point3<f64> {
-        Point3::new(v.x, v.y, v.z)
-    }
-}
-
-impl From<Point3<f64>> for Vec3 {
-    fn from(p: Point3<f64>) -> Vec3 {
-        Vec3::new(p.x, p.y, p.z)
-    }
-}
-
-impl From<Vector3<f64>> for Vec3 {
-    fn from(v: Vector3<f64>) -> Vec3 {
-        Vec3::new(v.x, v.y, v.z)
-    }
-}
-
-impl From<Vec3> for Vector3<f64> {
-    fn from(v: Vec3) -> Vector3<f64> {
-        Vector3::new(v.x, v.y, v.z)
     }
 }
 

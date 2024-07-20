@@ -2,7 +2,7 @@ use std::f64::consts::PI;
 use std::fmt::Debug;
 
 use crate::aabb::Aabb;
-use crate::bvh::{ShapeTree, ShapeTreeBuilder};
+use crate::bvh::ShapeList;
 use crate::color::Color;
 use crate::hit_record::HitRecord;
 use crate::interval::Interval;
@@ -177,14 +177,14 @@ impl ShapePDFProvider for Quad {
     }
 }
 
-pub fn create_cube(a: Vec3, b: Vec3) -> ShapeTree {
+pub fn create_cube(a: Vec3, b: Vec3) -> ShapeList {
     let aabb = Aabb::from_vec3(a, b);
     let min_pos = aabb.min_pos();
     let max_pos = aabb.max_pos();
     let dx = Vec3::new(aabb.x.length(), 0.0, 0.0);
     let dy = Vec3::new(0.0, aabb.y.length(), 0.0);
     let dz = Vec3::new(0.0, 0.0, aabb.z.length());
-    let mut quads = ShapeTreeBuilder::default();
+    let mut quads = ShapeList::default();
     quads.push(Quad::new(
         Vec3::new(min_pos.x, min_pos.y, max_pos.z),
         dx,
@@ -215,7 +215,7 @@ pub fn create_cube(a: Vec3, b: Vec3) -> ShapeTree {
         dx,
         dz,
     )); // negative y
-    quads.tree()
+    quads
 }
 
 pub struct Moving<T: Shape> {
