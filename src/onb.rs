@@ -1,13 +1,13 @@
 use crate::vec3::Vec3;
 
 #[derive(Debug)]
-pub struct ONB {
+pub struct Onb {
     pub u: Vec3,
     pub v: Vec3,
     pub w: Vec3,
 }
 
-impl ONB {
+impl Onb {
     pub fn normal(n: Vec3) -> Self {
         let w = n.normalize();
         let a = if w.x.abs() > 0.9 {
@@ -17,14 +17,14 @@ impl ONB {
         };
         let u = (a * w).normalize();
         let v = w * u;
-        ONB { u, v, w }
+        Onb { u, v, w }
     }
 
     pub fn normal_with_up(n: Vec3, up: Vec3) -> Self {
         let w = n.normalize();
         let u = (up * w).normalize();
         let v = w * u;
-        ONB { u, v, w }
+        Onb { u, v, w }
     }
 
     pub fn local(&self, a: Vec3) -> Vec3 {

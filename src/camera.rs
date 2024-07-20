@@ -1,6 +1,6 @@
 use rand::Rng;
 
-use crate::onb::ONB;
+use crate::onb::Onb;
 use crate::ray::Ray;
 use crate::vec3::Vec3;
 
@@ -42,7 +42,7 @@ impl Camera {
         lens_param: LensParam,
         canvas_param: ImageParam,
     ) -> Self {
-        let uvw = ONB::normal_with_up(
+        let uvw = Onb::normal_with_up(
             perspective_param.look_from - perspective_param.look_at,
             perspective_param.view_up,
         );

@@ -6,9 +6,11 @@ use indicatif::ProgressBar;
 use crate::camera::Camera;
 use crate::canvas::Canvas;
 use crate::color::Color;
-use crate::hittable::Scatter::{Absorb, ScatterPDF, ScatterRay};
-use crate::hittable::{HitRecord, Hittable, World};
+use crate::hit_record::HitRecord;
+use crate::hit_record::Scatter::{Absorb, ScatterPDF, ScatterRay};
 use crate::ray::Ray;
+use crate::shape::Shape;
+use crate::world::World;
 
 pub struct RayTracer {
     camera: Camera,

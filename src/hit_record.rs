@@ -1,12 +1,8 @@
-use crate::aabb::AABB;
-use crate::bvh::HittableTree;
 use crate::color::Color;
-use crate::hittable::Scatter::{Absorb, ScatterPDF, ScatterRay};
+use crate::hit_record::Scatter::{Absorb, ScatterPDF, ScatterRay};
 use crate::interval::Interval;
-use crate::material::Material;
 use crate::pdf::{ShapePDF, PDF};
 use crate::ray::Ray;
-use crate::shape::{Shape, ShapePDFProvider};
 use crate::texture::UV;
 use crate::vec3::Vec3;
 
@@ -73,7 +69,7 @@ impl HitRecord {
         }
     }
 
-    pub fn set_hit(&mut self, t: f64, outward_normal: Vec3, uv: UV) {
+    fn generate_hit_info(&self, t: f64, outward_normal: Vec3, uv: UV) -> HitInfo {
         let position = self.ray.at(t);
         let front_face = self.ray.direction.dot(outward_normal) < 0.0;
         let normal = if front_face {
@@ -81,7 +77,7 @@ impl HitRecord {
         } else {
             -outward_normal
         };
-        self.hit_info = Some(HitInfo {
+        HitInfo {
             t,
             position,
             normal,
@@ -90,8 +86,27 @@ impl HitRecord {
             emission: Color::BLACK,
             attenuation: Color::WHITE,
             scatter: Absorb,
-        });
-        self.interval.limit_max(t)
+        }
+    }
+
+    pub fn set_hit(&mut self, t: f64, outward_normal: Vec3, uv: UV) {
+        self.hit_info = Some(self.generate_hit_info(t, outward_normal, uv));
+        self.interval.limit_max(t);
+    }
+
+    pub fn set_hit_test(
+        &mut self,
+        t: f64,
+        outward_normal: Vec3,
+        uv: UV,
+        predicate: impl Fn(&HitInfo) -> bool,
+    ) -> bool {
+        let hit_info = self.generate_hit_info(t, outward_normal, uv);
+        predicate(&hit_info) && {
+            self.hit_info = Some(hit_info);
+            self.interval.limit_max(t);
+            true
+        }
     }
 
     pub fn set_scatter_ray(&mut self, direction: Vec3) {
@@ -105,10 +120,6 @@ impl HitRecord {
 
     pub fn set_scatter_absorb(&mut self) {
         self.get_hit_mut().scatter = Absorb
-    }
-
-    pub fn set_scatter_pass(&mut self) {
-        self.set_scatter_ray(self.ray.direction);
     }
 
     pub fn does_hit(&self) -> bool {
@@ -167,78 +178,5 @@ impl HitRecord {
     pub fn set_interval(&mut self, interval: Interval) {
         // you may call this for restoring the interval
         self.interval = interval;
-    }
-}
-
-pub trait Hittable: Sync + Send {
-    // hit_record.ray is the original ray.
-    // if hit, update hit_record.hit and scatter and return true;
-    // otherwise, do no change and return false.
-    fn hit(&self, hit_record: &mut HitRecord) -> bool;
-
-    // return the bounding box for hit testing
-    fn aabb(&self) -> AABB;
-}
-
-pub struct Object<S: Shape, M: Material> {
-    pub shape: S,
-    pub material: M,
-}
-
-impl<S: Shape, M: Material> Object<S, M> {
-    pub fn new(shape: S, material: M) -> Self {
-        Self { shape, material }
-    }
-}
-
-impl<S: Shape, M: Material> Hittable for Object<S, M> {
-    fn hit(&self, hit_record: &mut HitRecord) -> bool {
-        self.shape.hit(hit_record) && {
-            self.material.scatter(hit_record);
-            true
-        }
-    }
-
-    fn aabb(&self) -> AABB {
-        self.shape.aabb()
-    }
-}
-
-pub struct World {
-    pub objects: HittableTree,
-    pub light_pdf: ShapePDF,
-    pub background: Color,
-}
-
-#[derive(Default)]
-pub struct WorldBuilder {
-    objects: Vec<Box<dyn Hittable>>,
-    light_pdf: ShapePDF,
-    background: Option<Color>,
-}
-
-impl WorldBuilder {
-    pub fn add<T: Hittable + 'static>(&mut self, object: T) {
-        self.objects.push(Box::new(object));
-    }
-
-    pub fn add_object<S: Shape + 'static, M: Material + 'static>(&mut self, shape: S, material: M) {
-        self.add(Object::new(shape, material));
-    }
-
-    pub fn add_light<T: ShapePDFProvider + 'static>(&mut self, shape: T) {
-        self.light_pdf.push(shape);
-    }
-
-    pub fn set_background(&mut self, color: Color) {
-        self.background = Some(color);
-    }
-
-    pub fn build(self) -> World {
-        World {
-            objects: HittableTree::new(self.objects),
-            light_pdf: self.light_pdf,
-            background: self.background.unwrap_or(Color::BLACK),
-        }
     }
 }

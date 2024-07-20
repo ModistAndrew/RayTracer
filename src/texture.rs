@@ -1,6 +1,6 @@
 use crate::canvas::Canvas;
 use crate::color::Color;
-use crate::hittable::HitRecord;
+use crate::hit_record::{HitInfo, HitRecord};
 use crate::material::Material;
 use crate::noise::Noise;
 use std::ops::{Add, Mul, Sub};
@@ -51,7 +51,7 @@ impl Mul<f64> for UV {
 }
 
 pub trait Texture: Sync + Send {
-    fn value(&self, hit_record: &HitRecord) -> Color;
+    fn value(&self, hit_info: &HitInfo) -> Color;
 }
 
 pub struct SolidColor {
@@ -65,7 +65,7 @@ impl SolidColor {
 }
 
 impl Texture for SolidColor {
-    fn value(&self, _hit_record: &HitRecord) -> Color {
+    fn value(&self, _hit_info: &HitInfo) -> Color {
         self.color
     }
 }
@@ -87,8 +87,8 @@ impl CheckerTexture {
 }
 
 impl Texture for CheckerTexture {
-    fn value(&self, hit_record: &HitRecord) -> Color {
-        let p = hit_record.get_hit().position;
+    fn value(&self, hit_info: &HitInfo) -> Color {
+        let p = hit_info.position;
         let x = (p.x * self.inv_scale).floor() as i32;
         let y = (p.y * self.inv_scale).floor() as i32;
         let z = (p.z * self.inv_scale).floor() as i32;
@@ -113,8 +113,8 @@ impl ImageTexture {
 }
 
 impl Texture for ImageTexture {
-    fn value(&self, hit_record: &HitRecord) -> Color {
-        self.image.read_uv(hit_record.get_hit().uv)
+    fn value(&self, hit_info: &HitInfo) -> Color {
+        self.image.read_uv(hit_info.uv)
     }
 }
 
@@ -130,44 +130,74 @@ impl NoiseTexture {
 }
 
 impl Texture for NoiseTexture {
-    fn value(&self, hit_record: &HitRecord) -> Color {
-        let p = hit_record.get_hit().position;
+    fn value(&self, hit_info: &HitInfo) -> Color {
+        let p = hit_info.position;
         Color::gray(0.5 * (1.0 + (self.scale * p.z + 10.0 * self.noise.turbulence(p, 7)).sin()))
     }
 }
 
-pub struct TexturedMaterial<T: Texture, M: Material> {
-    texture: T,
-    material: M,
+// atlas for setting and reading textures. for shape and material decoration
+#[derive(Default)]
+pub struct Atlas {
+    pub transparency: Option<Box<dyn Texture>>,
+    pub attenuation: Option<Box<dyn Texture>>,
+    pub emission: Option<Box<dyn Texture>>,
 }
 
-impl<T: Texture, M: Material> TexturedMaterial<T, M> {
-    pub fn new(texture: T, material: M) -> Self {
-        Self { texture, material }
+impl Atlas {
+    pub fn should_render(&self, hit_info: &HitInfo) -> bool {
+        self.transparency
+            .as_ref()
+            .map_or(true, |t| t.value(hit_info).r < 0.5)
     }
-}
 
-impl<T: Texture, M: Material> Material for TexturedMaterial<T, M> {
-    fn scatter(&self, hit_record: &mut HitRecord) {
-        self.material.scatter(hit_record);
-        hit_record.get_hit_mut().attenuation = self.texture.value(hit_record);
-    }
-}
-
-pub struct Emissive<T: Texture> {
-    texture: T,
-}
-
-impl<T: Texture> Emissive<T> {
-    pub fn new(texture: T) -> Self {
-        Self { texture }
-    }
-}
-
-impl<T: Texture> Material for Emissive<T> {
-    fn scatter(&self, hit_record: &mut HitRecord) {
+    pub fn decorate(&self, hit_record: &mut HitRecord) {
+        if let Some(t) = self.attenuation.as_ref() {
+            hit_record.get_hit_mut().attenuation = t.value(hit_record.get_hit());
+        }
         if hit_record.get_hit().front_face {
-            hit_record.get_hit_mut().emission = self.texture.value(hit_record);
+            if let Some(t) = self.emission.as_ref() {
+                hit_record.get_hit_mut().emission = t.value(hit_record.get_hit());
+            }
+        }
+    }
+}
+
+// a simple wrapper for textured material.
+// as atlas is mostly used for material, it is better to use this wrapper.
+#[derive(Default)]
+pub struct TexturedMaterial {
+    material: Option<Box<dyn Material>>,
+    pub atlas: Atlas,
+}
+
+impl TexturedMaterial {
+    pub fn set_material<T: Material + 'static>(mut self, material: T) -> Self {
+        self.material = Some(Box::new(material));
+        self
+    }
+
+    pub fn set_transparency<T: Texture + 'static>(mut self, texture: T) -> Self {
+        self.atlas.transparency = Some(Box::new(texture));
+        self
+    }
+
+    pub fn set_attenuation<T: Texture + 'static>(mut self, texture: T) -> Self {
+        self.atlas.attenuation = Some(Box::new(texture));
+        self
+    }
+
+    pub fn set_emission<T: Texture + 'static>(mut self, texture: T) -> Self {
+        self.atlas.emission = Some(Box::new(texture));
+        self
+    }
+}
+
+impl Material for TexturedMaterial {
+    fn scatter(&self, hit_record: &mut HitRecord) {
+        if let Some(m) = self.material.as_ref() {
+            m.scatter(hit_record);
+            self.atlas.decorate(hit_record);
         }
     }
 }

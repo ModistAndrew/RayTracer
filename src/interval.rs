@@ -22,7 +22,7 @@ impl Interval {
         max: f64::INFINITY,
     };
     pub const UNIT: Self = Self { min: 0.0, max: 1.0 };
-    const DELTA: f64 = 0.0001;
+    pub const DELTA: f64 = 0.0001;
     // leave a small gap to avoid sticking in the same position
     pub const POSITIVE: Self = Self {
         min: Self::DELTA,

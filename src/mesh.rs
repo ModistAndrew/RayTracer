@@ -1,16 +1,14 @@
 use std::collections::HashMap;
 
-use crate::aabb::AABB;
-use crate::bvh::{ShapeList, ShapeTree};
-use crate::color::Color;
-use crate::hittable::{HitRecord, Hittable};
-use crate::material::{Lambertian, Material};
+use crate::aabb::Aabb;
+use crate::bvh_wrapper::{AabbProvider, BoundedTree, BoundedTreeBuilder};
+use crate::hit_record::HitRecord;
+use crate::material::Material;
 use crate::shape::Shape;
-use crate::texture::{Texture, UV};
-use crate::transform::Transform;
+use crate::texture::{Atlas, Texture, TexturedMaterial, UV};
 use crate::vec3::Vec3;
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub struct Triangle {
     q: Vec3,
     u: Vec3,
@@ -21,7 +19,6 @@ pub struct Triangle {
     w: Vec3,
     normal: Vec3,
     d: f64,
-    area: f64,
 }
 
 impl Triangle {
@@ -30,7 +27,6 @@ impl Triangle {
         let normal = n.normalize();
         let d = normal.dot(q);
         let w = n / n.length_squared();
-        let area = n.length() / 2.0;
         Self {
             q,
             u,
@@ -41,7 +37,6 @@ impl Triangle {
             w,
             normal,
             d,
-            area,
         }
     }
 
@@ -58,10 +53,8 @@ impl Triangle {
             Triangle::new(q, v, u, tq, tv, tu)
         }
     }
-}
 
-impl Shape for Triangle {
-    fn hit(&self, hit_record: &mut HitRecord) -> bool {
+    fn hit(&self, hit_record: &mut HitRecord, atlas: &Atlas) -> bool {
         let ray = hit_record.get_ray();
         let denominator = self.normal.dot(ray.direction);
         let t = (self.d - self.normal.dot(ray.origin)) / denominator;
@@ -73,80 +66,60 @@ impl Shape for Triangle {
         let alpha = self.w.dot(planar_hit_pos * self.v);
         let beta = self.w.dot(self.u * planar_hit_pos);
         if alpha >= 0.0 && beta >= 0.0 && alpha + beta <= 1.0 {
-            hit_record.set_hit(t, self.normal, self.tq + self.tu * alpha + self.tv * beta);
-            return true;
+            return hit_record.set_hit_test(
+                t,
+                self.normal,
+                self.tq + self.tu * alpha + self.tv * beta,
+                |hit_info| atlas.should_render(hit_info),
+            );
         }
         false
     }
+}
 
-    fn transform(&mut self, matrix: Transform) {
-        self.q = matrix.pos(self.q);
-        self.u = matrix.direction(self.u);
-        self.v = matrix.direction(self.v);
-        let n = self.u * self.v;
-        self.normal = n.normalize();
-        self.d = self.normal.dot(self.q);
-        self.w = n / n.length_squared();
-        self.area = n.length() / 2.0;
-    }
-
-    fn aabb(&self) -> AABB {
-        AABB::union(
-            AABB::from_vec3(self.q, self.q + self.u + self.v),
-            AABB::from_vec3(self.q + self.u, self.q + self.v),
+impl AabbProvider for Triangle {
+    fn aabb(&self) -> Aabb {
+        Aabb::union(
+            Aabb::from_vec3(self.q, self.q + self.u),
+            Aabb::from_vec3(self.q, self.q + self.v),
         )
     }
 }
 
-#[derive(Default)]
-pub struct TextureMap {
-    transparency: Option<Box<dyn Texture>>,
-    albedo: Option<Box<dyn Texture>>,
-}
-
-impl TextureMap {
-    pub fn set_transparency<T: Texture + 'static>(&mut self, texture: T) {
-        self.transparency = Some(Box::new(texture));
-    }
-
-    pub fn set_albedo<T: Texture + 'static>(&mut self, texture: T) {
-        self.albedo = Some(Box::new(texture));
-    }
-
-    pub fn skip_render(&self, hit_record: &HitRecord) -> bool {
-        self.transparency
-            .as_ref()
-            .map_or(false, |t| t.value(hit_record).r < 0.5)
-    }
-
-    pub fn get_color(&self, hit_record: &HitRecord) -> Color {
-        self.albedo
-            .as_ref()
-            .map_or(Color::WHITE, |a| a.value(hit_record))
-    }
-}
+type TriangleTree = BoundedTree<Triangle>;
+type TriangleTreeBuilder = BoundedTreeBuilder<Triangle>;
 
 pub struct MeshObject {
-    triangles: ShapeTree,
-    material: Box<dyn Material>,
-    textures: TextureMap,
+    triangles: TriangleTree,
+    material: TexturedMaterial,
 }
 
 impl MeshObject {
-    pub fn new(shape_list: ShapeList) -> Self {
+    pub fn new(shape_list: TriangleTreeBuilder) -> Self {
         Self {
-            triangles: shape_list.tree(),
-            material: Box::new(Lambertian),
-            textures: TextureMap::default(),
+            triangles: shape_list.build(),
+            material: TexturedMaterial::default(),
         }
     }
 
-    pub fn set_material<M: Material + 'static>(&mut self, material: M) {
-        self.material = Box::new(material);
+    pub fn set_material<T: Material + 'static>(mut self, material: T) -> Self {
+        self.material = self.material.set_material(material);
+        self
     }
 
-    pub fn get_textures_mut(&mut self) -> &mut TextureMap {
-        &mut self.textures
+    pub fn set_transparency<T: Texture + 'static>(mut self, texture: T) -> Self {
+        self.material = self.material.set_transparency(texture);
+        self
+    }
+
+    pub fn set_attenuation<T: Texture + 'static>(mut self, texture: T) -> Self {
+        self.material = self.material.set_attenuation(texture);
+        self
+    }
+
+    pub fn set_emission<T: Texture + 'static>(mut self, texture: T) -> Self {
+        self.material = self.material.set_emission(texture);
+        self
     }
 
     pub fn from_obj(path: &str) -> HashMap<String, MeshObject> {
@@ -154,7 +127,7 @@ impl MeshObject {
         let (models, _materials) = obj.unwrap();
         let mut ret = HashMap::default();
         for model in models {
-            let mut traingles = ShapeList::default();
+            let mut triangles = TriangleTreeBuilder::default();
             let m = model.mesh;
             m.indices.chunks(3).for_each(|i| {
                 let a = Vec3::new(
@@ -190,29 +163,30 @@ impl MeshObject {
                     m.normals[i[0] as usize * 3 + 2],
                 ); // simply use the first normal. three normals are expected to be the same
                 let triangle = Triangle::vertex(a, b, c, ta, tb, tc, normal);
-                traingles.push(triangle);
+                triangles.add(triangle);
             });
-            ret.insert(model.name, MeshObject::new(traingles));
+            ret.insert(model.name, MeshObject::new(triangles));
         }
         ret
     }
 }
 
-impl Hittable for MeshObject {
+impl Shape for MeshObject {
     fn hit(&self, hit_record: &mut HitRecord) -> bool {
-        if !self.triangles.hit(hit_record) {
-            return false;
+        let mut hit = false;
+        self.triangles
+            .traverse(&hit_record.get_ray().ray3())
+            .into_iter()
+            .for_each(|triangle| {
+                hit |= triangle.inner.hit(hit_record, &self.material.atlas);
+            });
+        hit && {
+            self.material.scatter(hit_record);
+            true
         }
-        if self.textures.skip_render(hit_record) {
-            hit_record.set_scatter_pass();
-            return true;
-        }
-        self.material.scatter(hit_record);
-        hit_record.get_hit_mut().attenuation = self.textures.get_color(hit_record);
-        true
     }
 
-    fn aabb(&self) -> AABB {
+    fn bounding_box(&self) -> Aabb {
         self.triangles.aabb()
     }
 }

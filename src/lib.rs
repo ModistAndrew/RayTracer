@@ -1,9 +1,9 @@
 pub mod aabb;
-pub mod bvh;
+pub mod bvh_wrapper;
 pub mod camera;
 pub mod canvas;
 pub mod color;
-pub mod hittable;
+pub mod hit_record;
 pub mod interval;
 pub mod material;
 pub mod mesh;
@@ -16,3 +16,4 @@ pub mod shape;
 pub mod texture;
 pub mod transform;
 pub mod vec3;
+pub mod world;

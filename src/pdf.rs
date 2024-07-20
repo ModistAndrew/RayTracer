@@ -1,4 +1,4 @@
-use crate::onb::ONB;
+use crate::onb::Onb;
 use crate::shape::ShapePDFProvider;
 use crate::vec3::Vec3;
 use rand::prelude::IndexedRandom;
@@ -47,13 +47,13 @@ impl PDF for UniformHemisphere {
 
 #[derive(Debug)]
 pub struct CosineHemisphere {
-    uvw: ONB,
+    uvw: Onb,
 }
 
 impl CosineHemisphere {
     pub fn new(normal: Vec3) -> Self {
         Self {
-            uvw: ONB::normal(normal),
+            uvw: Onb::normal(normal),
         }
     }
 }

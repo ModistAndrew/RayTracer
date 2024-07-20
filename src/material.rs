@@ -1,6 +1,8 @@
+use crate::aabb::Aabb;
 use crate::color::Color;
-use crate::hittable::HitRecord;
+use crate::hit_record::HitRecord;
 use crate::pdf::{CosineHemisphere, UniformSphere};
+use crate::shape::Shape;
 use crate::vec3::Vec3;
 
 pub trait Material: Sync + Send {
@@ -111,16 +113,40 @@ impl Material for Translucent {
         let sin_theta = (1.0 - cos_theta * cos_theta).sqrt();
         let mut direction = unit_direction.reflect(normal);
         if refraction_ratio * sin_theta <= 1.0 {
-            let color = Color::new(1.0, sin_theta, 0.0);
+            let reflect_color = Color::new(1.0, sin_theta, 0.0);
             if rand::random::<bool>() {
                 let r_out_perp = (unit_direction + normal * cos_theta) * refraction_ratio;
                 let r_out_parallel = -normal * (1.0 - r_out_perp.length_squared()).sqrt();
                 direction = r_out_perp + r_out_parallel;
-                hit_record.get_hit_mut().attenuation = (Color::WHITE - color) * 2.0;
+                hit_record.get_hit_mut().attenuation = (Color::WHITE - reflect_color) * 2.0;
             } else {
-                hit_record.get_hit_mut().attenuation = color * 2.0;
+                hit_record.get_hit_mut().attenuation = reflect_color * 2.0;
             }
         };
         hit_record.set_scatter_ray(direction);
+    }
+}
+
+pub struct Object<S: Shape, M: Material> {
+    pub shape: S,
+    pub material: M,
+}
+
+impl<S: Shape, M: Material> Object<S, M> {
+    pub fn new(shape: S, material: M) -> Self {
+        Self { shape, material }
+    }
+}
+
+impl<S: Shape, M: Material> Shape for Object<S, M> {
+    fn hit(&self, hit_record: &mut HitRecord) -> bool {
+        self.shape.hit(hit_record) && {
+            self.material.scatter(hit_record);
+            true
+        }
+    }
+
+    fn bounding_box(&self) -> Aabb {
+        self.shape.bounding_box()
     }
 }
