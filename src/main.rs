@@ -58,7 +58,7 @@ fn main() {
     let image_height = 675;
     let camera = Camera::new(
         PerspectiveParam {
-            look_from: Vec3::new(12.0, 12.0, -6.0),
+            look_from: Vec3::new(0.0, 20.0, -20.0),
             look_at: Vec3::new(0.0, 0.0, 0.0),
             view_up: Vec3::new(0.0, 1.0, 0.0), // y-axis is up
         },
@@ -70,7 +70,7 @@ fn main() {
         ImageParam {
             image_width,
             image_height,
-            sample_per_pixel: 1000,
+            sample_per_pixel: 100,
         },
     );
     let picture = Canvas::empty(image_width, image_height);

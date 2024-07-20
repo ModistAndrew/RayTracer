@@ -2,7 +2,7 @@ use std::f64::consts::PI;
 use std::fmt::Debug;
 
 use crate::aabb::Aabb;
-use crate::bvh_wrapper::{AabbProvider, BoundedTree, BoundedTreeBuilder};
+use crate::bvh::{ShapeTree, ShapeTreeBuilder};
 use crate::color::Color;
 use crate::hit_record::HitRecord;
 use crate::interval::Interval;
@@ -18,38 +18,6 @@ pub trait Shape: Sync + Send {
     fn hit(&self, hit_record: &mut HitRecord, atlas: &Atlas) -> bool;
     // return the bounding box for hit testing. only called once for construction
     fn bounding_box(&self) -> Aabb;
-}
-
-impl AabbProvider for Box<dyn Shape> {
-    fn aabb(&self) -> Aabb {
-        self.bounding_box().pad()
-    }
-}
-
-pub type ShapeTree = BoundedTree<Box<dyn Shape>>;
-pub type ShapeTreeBuilder = BoundedTreeBuilder<Box<dyn Shape>>;
-
-impl Shape for ShapeTree {
-    // implement Shape for ShapeTree. you can use ShapeTree as a Shape.
-    fn hit(&self, hit_record: &mut HitRecord, atlas: &Atlas) -> bool {
-        let mut hit = false;
-        self.traverse(&hit_record.get_ray().ray3())
-            .into_iter()
-            .for_each(|shape| {
-                hit |= shape.inner.hit(hit_record, atlas);
-            });
-        hit
-    }
-
-    fn bounding_box(&self) -> Aabb {
-        self.aabb()
-    }
-}
-
-impl ShapeTreeBuilder {
-    pub fn add_shape<T: Shape + 'static>(&mut self, shape: T) {
-        self.add(Box::new(shape));
-    }
 }
 
 pub trait ShapePDFProvider: Shape + Debug {
@@ -217,37 +185,37 @@ pub fn create_cube(a: Vec3, b: Vec3) -> ShapeTree {
     let dy = Vec3::new(0.0, aabb.y.length(), 0.0);
     let dz = Vec3::new(0.0, 0.0, aabb.z.length());
     let mut quads = ShapeTreeBuilder::default();
-    quads.add_shape(Quad::new(
+    quads.push(Quad::new(
         Vec3::new(min_pos.x, min_pos.y, max_pos.z),
         dx,
         dy,
     )); // positive z
-    quads.add_shape(Quad::new(
+    quads.push(Quad::new(
         Vec3::new(max_pos.x, min_pos.y, max_pos.z),
         -dz,
         dy,
     )); // positive x
-    quads.add_shape(Quad::new(
+    quads.push(Quad::new(
         Vec3::new(max_pos.x, min_pos.y, min_pos.z),
         -dx,
         dy,
     )); // negative z
-    quads.add_shape(Quad::new(
+    quads.push(Quad::new(
         Vec3::new(min_pos.x, min_pos.y, min_pos.z),
         dz,
         dy,
     )); // negative x
-    quads.add_shape(Quad::new(
+    quads.push(Quad::new(
         Vec3::new(min_pos.x, max_pos.y, max_pos.z),
         dx,
         -dz,
     )); // positive y
-    quads.add_shape(Quad::new(
+    quads.push(Quad::new(
         Vec3::new(min_pos.x, min_pos.y, min_pos.z),
         dx,
         dz,
     )); // negative y
-    quads.build()
+    quads.tree()
 }
 
 pub struct Moving<T: Shape> {

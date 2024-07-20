@@ -1,5 +1,5 @@
 pub mod aabb;
-pub mod bvh_wrapper;
+pub mod bvh;
 pub mod camera;
 pub mod canvas;
 pub mod color;

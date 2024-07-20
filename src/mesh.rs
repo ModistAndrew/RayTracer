@@ -1,8 +1,9 @@
 use std::collections::HashMap;
 
 use crate::aabb::Aabb;
+use crate::bvh::{ShapeTree, ShapeTreeBuilder};
 use crate::hit_record::HitRecord;
-use crate::shape::{Shape, ShapeTree, ShapeTreeBuilder};
+use crate::shape::Shape;
 use crate::texture::{Atlas, UV};
 use crate::vec3::Vec3;
 
@@ -125,9 +126,9 @@ pub fn load_obj(path: &str) -> HashMap<String, ShapeTree> {
                 m.normals[i[0] as usize * 3 + 2],
             ); // simply use the first normal. three normals are expected to be the same
             let triangle = Triangle::vertex(a, b, c, ta, tb, tc, normal);
-            triangles.add_shape(triangle);
+            triangles.push(triangle);
         });
-        ret.insert(model.name, triangles.build());
+        ret.insert(model.name, triangles.tree());
     }
     ret
 }

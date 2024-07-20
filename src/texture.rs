@@ -163,7 +163,7 @@ impl Atlas {
     pub fn should_render(&self, hit_info: &HitInfo) -> bool {
         self.transparency
             .as_ref()
-            .map_or(true, |t| t.value(hit_info).r < 0.5)
+            .map_or(true, |t| t.value(hit_info).r > 0.5)
     }
 
     pub fn get_attenuation(&self, hit_info: &HitInfo) -> Color {
