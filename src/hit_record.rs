@@ -3,7 +3,7 @@ use crate::hit_record::Scatter::{Absorb, ScatterPDF, ScatterRay};
 use crate::interval::Interval;
 use crate::pdf::{ShapePDF, PDF};
 use crate::ray::Ray;
-use crate::texture::UV;
+use crate::texture::{Atlas, UV};
 use crate::vec3::Vec3;
 
 pub enum Scatter {
@@ -89,20 +89,16 @@ impl HitRecord {
         }
     }
 
-    pub fn set_hit(&mut self, t: f64, outward_normal: Vec3, uv: UV) {
-        self.hit_info = Some(self.generate_hit_info(t, outward_normal, uv));
+    // if normal and uv is not available, use this
+    pub fn set_hit_arbitrary(&mut self, t: f64) {
+        self.hit_info = Some(self.generate_hit_info(t, Vec3::default(), UV::default()));
         self.interval.limit_max(t);
     }
 
-    pub fn set_hit_test(
-        &mut self,
-        t: f64,
-        outward_normal: Vec3,
-        uv: UV,
-        predicate: impl Fn(&HitInfo) -> bool,
-    ) -> bool {
+    // set hit info and update the interval. may fail if the predicate is false
+    pub fn set_hit(&mut self, t: f64, outward_normal: Vec3, uv: UV, atlas: &Atlas) -> bool {
         let hit_info = self.generate_hit_info(t, outward_normal, uv);
-        predicate(&hit_info) && {
+        atlas.should_render(&hit_info) && {
             self.hit_info = Some(hit_info);
             self.interval.limit_max(t);
             true

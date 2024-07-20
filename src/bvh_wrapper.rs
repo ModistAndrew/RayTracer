@@ -1,13 +1,14 @@
 use bvh::aabb::Bounded;
-use bvh::bounding_hierarchy::BHShape;
+use bvh::bounding_hierarchy::{BHShape, BoundingHierarchy};
 use bvh::bvh::Bvh;
+use bvh::flat_bvh::FlatBvh;
 
 use crate::aabb::{Aabb, Aabb3};
 use crate::ray::Ray3;
 
 // wrapper for bvh.
 // you can use any T which impl AabbProvider
-pub trait AabbProvider {
+pub trait AabbProvider: Sync + Send {
     fn aabb(&self) -> Aabb;
 }
 
@@ -43,7 +44,7 @@ impl<T: AabbProvider> BHShape<f64, 3> for BoundedNode<T> {
 
 pub struct BoundedTree<T: AabbProvider> {
     vec: Vec<BoundedNode<T>>,
-    bvh: Bvh<f64, 3>,
+    bvh: FlatBvh<f64, 3>,
     aabb: Aabb, // store an AABB for the entire tree
 }
 
@@ -79,7 +80,7 @@ impl<T: AabbProvider> BoundedTreeBuilder<T> {
     }
 
     pub fn build(mut self) -> BoundedTree<T> {
-        let bvh = Bvh::build(&mut self.vec);
+        let bvh = Bvh::build_par(&mut self.vec).flatten();
         BoundedTree {
             vec: self.vec,
             bvh,

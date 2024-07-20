@@ -1,22 +1,22 @@
-use crate::aabb::Aabb;
 use crate::color::Color;
 use crate::hit_record::HitRecord;
 use crate::pdf::{CosineHemisphere, UniformSphere};
-use crate::shape::Shape;
+use crate::texture::Atlas;
 use crate::vec3::Vec3;
 
 pub trait Material: Sync + Send {
     // hit_record.ray and hit_record.hit are the original ray and hit info
     // should set hit_record.scatter to three possible values (Absorb by default)
     // may decorate emission and attenuation
-    fn scatter(&self, hit_record: &mut HitRecord);
+    fn scatter(&self, hit_record: &mut HitRecord, atlas: &Atlas);
 }
 
 pub struct Lambertian;
 
 impl Material for Lambertian {
-    fn scatter(&self, hit_record: &mut HitRecord) {
+    fn scatter(&self, hit_record: &mut HitRecord, atlas: &Atlas) {
         hit_record.set_scatter_pdf(CosineHemisphere::new(hit_record.get_hit().normal));
+        hit_record.get_hit_mut().attenuation = atlas.get_attenuation(hit_record.get_hit());
     }
 }
 
@@ -31,7 +31,7 @@ impl Metal {
 }
 
 impl Material for Metal {
-    fn scatter(&self, hit_record: &mut HitRecord) {
+    fn scatter(&self, hit_record: &mut HitRecord, _atlas: &Atlas) {
         let reflected = hit_record
             .get_ray()
             .direction
@@ -59,7 +59,7 @@ impl Dielectric {
 }
 
 impl Material for Dielectric {
-    fn scatter(&self, hit_record: &mut HitRecord) {
+    fn scatter(&self, hit_record: &mut HitRecord, _atlas: &Atlas) {
         let refraction_ratio = if hit_record.get_hit().front_face {
             1.0 / self.refraction_index
         } else {
@@ -85,7 +85,7 @@ impl Material for Dielectric {
 pub struct Isotropic;
 
 impl Material for Isotropic {
-    fn scatter(&self, hit_record: &mut HitRecord) {
+    fn scatter(&self, hit_record: &mut HitRecord, _atlas: &Atlas) {
         hit_record.set_scatter_pdf(UniformSphere);
     }
 }
@@ -101,7 +101,7 @@ impl Translucent {
 }
 
 impl Material for Translucent {
-    fn scatter(&self, hit_record: &mut HitRecord) {
+    fn scatter(&self, hit_record: &mut HitRecord, _atlas: &Atlas) {
         let refraction_ratio = if hit_record.get_hit().front_face {
             1.0 / self.refraction_index
         } else {
@@ -127,26 +127,12 @@ impl Material for Translucent {
     }
 }
 
-pub struct Object<S: Shape, M: Material> {
-    pub shape: S,
-    pub material: M,
-}
+pub struct Emissive;
 
-impl<S: Shape, M: Material> Object<S, M> {
-    pub fn new(shape: S, material: M) -> Self {
-        Self { shape, material }
-    }
-}
-
-impl<S: Shape, M: Material> Shape for Object<S, M> {
-    fn hit(&self, hit_record: &mut HitRecord) -> bool {
-        self.shape.hit(hit_record) && {
-            self.material.scatter(hit_record);
-            true
+impl Material for Emissive {
+    fn scatter(&self, hit_record: &mut HitRecord, atlas: &Atlas) {
+        if hit_record.get_hit().front_face {
+            hit_record.get_hit_mut().emission = atlas.get_emission(hit_record.get_hit());
         }
-    }
-
-    fn bounding_box(&self) -> Aabb {
-        self.shape.bounding_box()
     }
 }

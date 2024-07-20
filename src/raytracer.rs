@@ -8,9 +8,8 @@ use crate::canvas::Canvas;
 use crate::color::Color;
 use crate::hit_record::HitRecord;
 use crate::hit_record::Scatter::{Absorb, ScatterPDF, ScatterRay};
+use crate::hittable::{Hittable, World};
 use crate::ray::Ray;
-use crate::shape::Shape;
-use crate::world::World;
 
 pub struct RayTracer {
     camera: Camera,
