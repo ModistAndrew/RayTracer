@@ -1,4 +1,4 @@
-use raytracer::bvh::{ShapeList, ShapeTree};
+use raytracer::bvh::ShapeList;
 use raytracer::camera::{Camera, ImageParam, LensParam, PerspectiveParam};
 use raytracer::canvas::Canvas;
 use raytracer::color::Color;
@@ -14,7 +14,7 @@ fn main() {
     let mut world = WorldBuilder::default();
     let mut mesh = Mesh::load_obj("assets/test2.obj");
     println!("Mesh: {:?}", mesh.get_names());
-    world.set_background(Color::new_u8(0x7F, 0xFF, 0xD4));
+    world.set_background(Color::new_u8(0x7F, 0xFF, 0xD4) * 0.5);
     world.add_object(
         mesh.remove_shape("deco1"),
         Metal::new(0.1),
@@ -118,7 +118,7 @@ fn main() {
         Isotropic,
         Atlas::default()
             .set_transparency(ImageTexture::new("assets/key3_alpha.png"))
-            .set_attenuation(SolidColor::new(Color::new_u8(51, 102, 153))),
+            .set_attenuation(SolidColor::new(Color::new_u8(51, 102, 153) * 2.0)),
     );
     world.add_object(
         mesh.remove_shape("key4_chain"),
@@ -183,40 +183,50 @@ fn main() {
     );
     world.add_object(
         mesh.remove_shape("box_back"),
-        Emissive,
+        Emissive::new(1.0),
         Atlas::default().set_emission(ImageTexture::new("assets/emission.png")),
     );
     world.add_object(
         mesh.remove_shape("box_down"),
-        Lambertian,
+        Metal::new(0.5),
         Atlas::default().set_attenuation(ImageTexture::new("assets/wood.png")),
     );
     world.add_object(
-        Sphere::new(Vec3::new(14.0, 13.0, 0.0), 2.0),
-        Emissive,
-        Atlas::default().set_emission(SolidColor::new(Color::new_u8(253, 94, 83) * 10.0)),
+        Sphere::new(Vec3::new(6.5, 13.0, 0.0), 1.0),
+        Emissive::new(20.0),
+        Atlas::default().set_emission(SolidColor::new(Color::new_u8(253, 94, 83))),
+    );
+    world.add_object(
+        ConstantMedium::new(0.03, Sphere::new(Vec3::new(0.0, 4.0, 0.0), 3.75)),
+        Isotropic,
+        Atlas::default().set_attenuation(SolidColor::new(Color::new_u8(255, 0, 255))),
+    );
+    world.add_object(
+        ConstantMedium::new(0.02, Sphere::new(Vec3::new(0.0, 4.0, 0.0), 7.5)),
+        Isotropic,
+        Atlas::default().set_attenuation(SolidColor::new(Color::new_u8(255, 0, 255))),
     );
 
-    let image_width = 1080;
-    let image_height = 1080 / 16 * 9;
+    let image_width = 4000;
+    let image_height = 2000;
     let camera = Camera::new(
         PerspectiveParam {
-            look_from: Vec3::new(45.0, 13.0, 0.0),
-            look_at: Vec3::new(0.0, 3.5, 0.0),
+            look_from: Vec3::new(45.0, 12.0, 0.0),
+            look_at: Vec3::new(0.0, 2.5, 0.0),
             view_up: Vec3::new(0.0, 1.0, 0.0), // y-axis is up
         },
         LensParam {
             fov: 27.5,
-            defocus_angle: 1.0,
+            defocus_angle: 2.0,
             focus_dist: 40.0,
         },
         ImageParam {
             image_width,
             image_height,
-            sample_per_pixel: 100,
+            sample_per_pixel: 1000,
         },
     );
     let picture = Canvas::empty(image_width, image_height);
     let raytracer = RayTracer::new(camera, picture, world.build(), 50);
-    raytracer.render().save("output/final/test12.png");
+    raytracer.render().save("output/final/final_scene.png");
 }

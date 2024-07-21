@@ -129,12 +129,20 @@ impl Material for Translucent {
     }
 }
 
-pub struct Emissive;
+pub struct Emissive {
+    ratio: f64,
+}
+
+impl Emissive {
+    pub fn new(ratio: f64) -> Self {
+        Self { ratio }
+    }
+}
 
 impl Material for Emissive {
     fn scatter(&self, hit_record: &mut HitRecord, atlas: &Atlas) {
         if hit_record.get_hit().front_face {
-            hit_record.get_hit_mut().emission = atlas.get_emission(hit_record.get_hit());
+            hit_record.get_hit_mut().emission = atlas.get_emission(hit_record.get_hit()) * self.ratio;
         }
     }
 }
