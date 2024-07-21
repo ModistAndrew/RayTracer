@@ -140,10 +140,10 @@ impl Texture for NoiseTexture {
 // atlas for setting and reading textures. for shape and material decoration
 #[derive(Default)]
 pub struct Atlas {
-    transparency: Option<Box<dyn Texture>>,
-    attenuation: Option<Box<dyn Texture>>,
-    emission: Option<Box<dyn Texture>>,
-    normal: Option<Box<dyn Texture>>,
+    pub transparency: Option<Box<dyn Texture>>,
+    pub attenuation: Option<Box<dyn Texture>>,
+    pub emission: Option<Box<dyn Texture>>,
+    pub normal: Option<Box<dyn Texture>>,
 }
 
 impl Atlas {

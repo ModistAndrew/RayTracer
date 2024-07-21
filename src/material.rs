@@ -83,12 +83,25 @@ impl Material for Dielectric {
     }
 }
 
-pub struct Isotropic;
+pub struct Isotropic {
+    glow: f64,
+}
+
+impl Isotropic {
+    pub fn new(glow: f64) -> Self {
+        Self { glow }
+    }
+}
 
 impl Material for Isotropic {
     fn scatter(&self, hit_record: &mut HitRecord, atlas: &Atlas) {
-        hit_record.set_scatter_pdf(UniformSphere);
-        hit_record.get_hit_mut().attenuation = atlas.get_attenuation(hit_record.get_hit());
+        if rand::random::<f64>() > self.glow {
+            hit_record.set_scatter_pdf(UniformSphere);
+            hit_record.get_hit_mut().attenuation = atlas.get_attenuation(hit_record.get_hit());
+        } else {
+            hit_record.set_scatter_absorb();
+            hit_record.get_hit_mut().emission = atlas.get_attenuation(hit_record.get_hit());
+        }
     }
 }
 

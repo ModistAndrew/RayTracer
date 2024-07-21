@@ -115,10 +115,11 @@ fn main() {
     boundary.push(mesh.remove_shape("key3_side_boundary"));
     world.add_object(
         ConstantMedium::new(5.0, boundary),
-        Isotropic,
+        Isotropic::new(0.4),
         Atlas::default()
             .set_transparency(ImageTexture::new("assets/key3_alpha.png"))
-            .set_attenuation(SolidColor::new(Color::new_u8(51, 102, 153) * 2.0)),
+            .set_attenuation(SolidColor::new(Color::new_u8(51, 102, 153)))
+            .set_emission(SolidColor::new(Color::new_u8(51, 102, 153))),
     );
     world.add_object(
         mesh.remove_shape("key4_chain"),
@@ -198,12 +199,12 @@ fn main() {
     );
     world.add_object(
         ConstantMedium::new(0.03, Sphere::new(Vec3::new(0.0, 4.0, 0.0), 3.75)),
-        Isotropic,
+        Isotropic::new(0.2),
         Atlas::default().set_attenuation(SolidColor::new(Color::new_u8(255, 0, 255))),
     );
     world.add_object(
         ConstantMedium::new(0.02, Sphere::new(Vec3::new(0.0, 4.0, 0.0), 7.5)),
-        Isotropic,
+        Isotropic::new(0.2),
         Atlas::default().set_attenuation(SolidColor::new(Color::new_u8(255, 0, 255))),
     );
 
@@ -223,7 +224,7 @@ fn main() {
         ImageParam {
             image_width,
             image_height,
-            sample_per_pixel: 2500,
+            sample_per_pixel: 1000,
         },
     );
     let picture = Canvas::empty(image_width, image_height);
