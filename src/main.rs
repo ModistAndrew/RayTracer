@@ -212,21 +212,21 @@ fn main() {
     let camera = Camera::new(
         PerspectiveParam {
             look_from: Vec3::new(45.0, 12.0, 0.0),
-            look_at: Vec3::new(0.0, 2.5, 0.0),
+            look_at: Vec3::new(0.0, 2.95, 0.0),
             view_up: Vec3::new(0.0, 1.0, 0.0), // y-axis is up
         },
         LensParam {
-            fov: 27.5,
-            defocus_angle: 2.0,
+            fov: 28.0,
+            defocus_angle: 1.5,
             focus_dist: 40.0,
         },
         ImageParam {
             image_width,
             image_height,
-            sample_per_pixel: 1000,
+            sample_per_pixel: 2500,
         },
     );
     let picture = Canvas::empty(image_width, image_height);
     let raytracer = RayTracer::new(camera, picture, world.build(), 50);
-    raytracer.render().save("output/final/final_scene.png");
+    raytracer.render().save("output/final/final_final_scene.png");
 }
