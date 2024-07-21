@@ -7,7 +7,7 @@ pub mod hit_record;
 pub mod hittable;
 pub mod interval;
 pub mod material;
-pub mod model_loader;
+pub mod mesh;
 pub mod noise;
 pub mod onb;
 pub mod pdf;

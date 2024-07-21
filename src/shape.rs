@@ -264,16 +264,17 @@ impl<T: Shape> ConstantMedium<T> {
 impl<T: Shape> Shape for ConstantMedium<T> {
     fn hit(&self, hit_record: &mut HitRecord, atlas: &Atlas) -> bool {
         let ray = hit_record.get_ray();
-        let mut rec1 = HitRecord::new(ray.clone());
-        if !self.boundary.hit(&mut rec1, atlas) {
+        let mut rec = HitRecord::new(ray.clone());
+        rec.set_interval(Interval::UNIVERSE);
+        if !self.boundary.hit(&mut rec, atlas) {
             return false;
         }
-        let t1 = rec1.get_hit().t;
-        let mut rec2 = HitRecord::new(ray.clone());
-        if !self.boundary.hit(&mut rec2, atlas) {
+        let t1 = rec.get_hit().t;
+        rec.set_interval(Interval::new(t1 + Interval::DELTA, f64::INFINITY));
+        if !self.boundary.hit(&mut rec, atlas) {
             return false;
         }
-        let t2 = rec2.get_hit().t;
+        let t2 = rec.get_hit().t;
         let interval = Interval::new(t1, t2).intersect(hit_record.get_interval());
         if interval.empty() {
             return false;

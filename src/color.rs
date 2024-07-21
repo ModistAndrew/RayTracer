@@ -25,6 +25,14 @@ impl Color {
         Self { r, g, b }
     }
 
+    pub fn new_u8(r: u8, g: u8, b: u8) -> Self {
+        Self {
+            r: r as f64 / 256.0,
+            g: g as f64 / 256.0,
+            b: b as f64 / 256.0,
+        }
+    }
+
     pub fn gray(value: f64) -> Self {
         Self {
             r: value,

@@ -85,8 +85,9 @@ impl Material for Dielectric {
 pub struct Isotropic;
 
 impl Material for Isotropic {
-    fn scatter(&self, hit_record: &mut HitRecord, _atlas: &Atlas) {
+    fn scatter(&self, hit_record: &mut HitRecord, atlas: &Atlas) {
         hit_record.set_scatter_pdf(UniformSphere);
+        hit_record.get_hit_mut().attenuation = atlas.get_attenuation(hit_record.get_hit());
     }
 }
 
