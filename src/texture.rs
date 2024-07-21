@@ -4,6 +4,7 @@ use crate::canvas::Canvas;
 use crate::color::Color;
 use crate::hit_record::HitInfo;
 use crate::noise::Noise;
+use crate::vec3::Vec3;
 
 #[derive(Clone, Copy, Default, Debug)]
 pub struct UV {
@@ -142,6 +143,7 @@ pub struct Atlas {
     transparency: Option<Box<dyn Texture>>,
     attenuation: Option<Box<dyn Texture>>,
     emission: Option<Box<dyn Texture>>,
+    normal: Option<Box<dyn Texture>>,
 }
 
 impl Atlas {
@@ -157,6 +159,11 @@ impl Atlas {
 
     pub fn set_emission<T: Texture + 'static>(mut self, texture: T) -> Self {
         self.emission = Some(Box::new(texture));
+        self
+    }
+
+    pub fn set_normal<T: Texture + 'static>(mut self, texture: T) -> Self {
+        self.normal = Some(Box::new(texture));
         self
     }
 
@@ -176,5 +183,14 @@ impl Atlas {
         self.emission
             .as_ref()
             .map_or(Color::BLACK, |t| t.value(hit_info))
+    }
+
+    pub fn get_normal(&self, hit_info: &HitInfo) -> Vec3 {
+        self.normal
+            .as_ref()
+            .map_or(Vec3::new(0.0, 0.0, 1.0), |t| {
+                let color = t.value(hit_info);
+                Vec3::new(color.r * 2.0 - 1.0, color.g * 2.0 - 1.0, color.b * 2.0 - 1.0)
+            })
     }
 }

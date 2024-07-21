@@ -1,6 +1,7 @@
 use crate::color::Color;
 use crate::hit_record::Scatter::{Absorb, ScatterPDF, ScatterRay};
 use crate::interval::Interval;
+use crate::onb::Onb;
 use crate::pdf::{ShapePDF, PDF};
 use crate::ray::Ray;
 use crate::texture::{Atlas, UV};
@@ -95,9 +96,18 @@ impl HitRecord {
         self.interval.limit_max(t);
     }
 
-    // set hit info and update the interval. may fail if the predicate is false
-    pub fn set_hit(&mut self, t: f64, outward_normal: Vec3, uv: UV, atlas: &Atlas) -> bool {
+    // set hit info and update the interval.
+    pub fn set_hit(&mut self, t: f64, outward_normal: Vec3, uv: UV) -> bool {
         let hit_info = self.generate_hit_info(t, outward_normal, uv);
+        self.hit_info = Some(hit_info);
+        self.interval.limit_max(t);
+        true
+    }
+
+    // set hit info and update the interval. check if the atlas should render the hit
+    pub fn set_hit_atlas(&mut self, t: f64, onb: Onb, uv: UV, atlas: &Atlas) -> bool {
+        let hit_info = self.generate_hit_info(t, onb.w, uv);
+        let hit_info = self.generate_hit_info(t, onb.local(atlas.get_normal(&hit_info)).normalize(), uv);
         atlas.should_render(&hit_info) && {
             self.hit_info = Some(hit_info);
             self.interval.limit_max(t);

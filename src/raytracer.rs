@@ -34,7 +34,8 @@ impl RayTracer {
         }
         let mut hit_record = HitRecord::new(ray);
         if !self.world.objects.hit(&mut hit_record) {
-            return self.world.background;
+            let a = 0.5 * (hit_record.get_ray().direction.normalize().y + 1.0);
+            return self.world.background * a;
         }
         let emission = hit_record.get_hit().emission;
         let attenuation = hit_record.get_hit().attenuation;

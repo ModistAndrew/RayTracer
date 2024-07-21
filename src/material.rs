@@ -31,7 +31,7 @@ impl Metal {
 }
 
 impl Material for Metal {
-    fn scatter(&self, hit_record: &mut HitRecord, _atlas: &Atlas) {
+    fn scatter(&self, hit_record: &mut HitRecord, atlas: &Atlas) {
         let reflected = hit_record
             .get_ray()
             .direction
@@ -39,6 +39,7 @@ impl Material for Metal {
         let reflected = reflected.normalize() + Vec3::random_unit_vector() * self.fuzz;
         if reflected.dot(hit_record.get_hit().normal) > 0.0 {
             hit_record.set_scatter_ray(reflected);
+            hit_record.get_hit_mut().attenuation = atlas.get_attenuation(hit_record.get_hit());
         }
     }
 }

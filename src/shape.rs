@@ -45,7 +45,7 @@ impl Sphere {
 }
 
 impl Shape for Sphere {
-    fn hit(&self, hit_record: &mut HitRecord, atlas: &Atlas) -> bool {
+    fn hit(&self, hit_record: &mut HitRecord, _atlas: &Atlas) -> bool {
         let ray = hit_record.get_ray();
         let interval = hit_record.get_interval();
         let oc = self.center - ray.origin;
@@ -66,12 +66,7 @@ impl Shape for Sphere {
         }
         let position = ray.at(root);
         let outward_normal = (position - self.center) / self.radius;
-        hit_record.set_hit(
-            root,
-            outward_normal,
-            Self::uv_from_normal(outward_normal),
-            atlas,
-        )
+        hit_record.set_hit(root, outward_normal, Self::uv_from_normal(outward_normal))
     }
 
     fn bounding_box(&self) -> Aabb {
@@ -133,7 +128,7 @@ impl Quad {
 }
 
 impl Shape for Quad {
-    fn hit(&self, hit_record: &mut HitRecord, atlas: &Atlas) -> bool {
+    fn hit(&self, hit_record: &mut HitRecord, _atlas: &Atlas) -> bool {
         let ray = hit_record.get_ray();
         let denominator = self.normal.dot(ray.direction);
         let t = (self.d - self.normal.dot(ray.origin)) / denominator;
@@ -145,7 +140,7 @@ impl Shape for Quad {
         let alpha = self.w.dot(planar_hit_pos * self.v);
         let beta = self.w.dot(self.u * planar_hit_pos);
         if Interval::UNIT.contains(alpha) && Interval::UNIT.contains(beta) {
-            return hit_record.set_hit(t, self.normal, UV::new(alpha, beta), atlas);
+            return hit_record.set_hit(t, self.normal, UV::new(alpha, beta));
         }
         false
     }

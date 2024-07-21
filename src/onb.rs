@@ -27,6 +27,13 @@ impl Onb {
         Onb { u, v, w }
     }
 
+    pub fn normal_with_tangent(n: Vec3, t: Vec3) -> Self {
+        let w = n.normalize();
+        let u = t.normalize();
+        let v = w * u;
+        Onb { u, v, w }
+    }
+
     pub fn local(&self, a: Vec3) -> Vec3 {
         self.u * a.x + self.v * a.y + self.w * a.z
     }

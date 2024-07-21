@@ -3,11 +3,12 @@ use std::collections::HashMap;
 use crate::aabb::Aabb;
 use crate::bvh::ShapeTree;
 use crate::hit_record::HitRecord;
+use crate::onb::Onb;
 use crate::shape::Shape;
 use crate::texture::{Atlas, UV};
 use crate::vec3::Vec3;
 
-#[derive(Debug, Clone)]
+#[derive(Debug)]
 pub struct Triangle {
     q: Vec3,
     u: Vec3,
@@ -21,6 +22,7 @@ pub struct Triangle {
     nu: Vec3,
     nv: Vec3,
     d: f64,
+    tangent: Vec3,
 }
 
 impl Triangle {
@@ -29,6 +31,12 @@ impl Triangle {
         let normal = n.normalize();
         let d = normal.dot(q);
         let w = n / n.length_squared();
+        let tangent = Vec3::new(
+            tv.v * u.x - tu.v * v.x,
+            tv.v * u.y - tu.v * v.y,
+            tv.v * u.z - tu.v * v.z,
+        );
+        let tangent = tangent / (tu.u * tv.v - tv.u * tu.v);
         Self {
             q,
             u,
@@ -42,6 +50,7 @@ impl Triangle {
             nu,
             nv,
             d,
+            tangent,
         }
     }
 
@@ -82,9 +91,9 @@ impl Shape for Triangle {
         let alpha = self.w.dot(planar_hit_pos * self.v);
         let beta = self.w.dot(self.u * planar_hit_pos);
         if alpha >= 0.0 && beta >= 0.0 && alpha + beta <= 1.0 {
-            return hit_record.set_hit(
+            return hit_record.set_hit_atlas(
                 t,
-                self.nq + self.nu * alpha + self.nv * beta,
+                Onb::normal_with_tangent(self.nq + self.nu * alpha + self.nv * beta, self.tangent),
                 self.tq + self.tu * alpha + self.tv * beta,
                 atlas,
             );
