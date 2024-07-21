@@ -17,11 +17,14 @@ pub struct Triangle {
     tv: UV,
     w: Vec3,
     normal: Vec3,
+    nq: Vec3,
+    nu: Vec3,
+    nv: Vec3,
     d: f64,
 }
 
 impl Triangle {
-    pub fn new(q: Vec3, u: Vec3, v: Vec3, tq: UV, tu: UV, tv: UV) -> Self {
+    pub fn new(q: Vec3, u: Vec3, v: Vec3, tq: UV, tu: UV, tv: UV, nq: Vec3, nu: Vec3, nv: Vec3) -> Self {
         let n = u * v;
         let normal = n.normalize();
         let d = normal.dot(q);
@@ -35,21 +38,27 @@ impl Triangle {
             tv,
             w,
             normal,
+            nq,
+            nu,
+            nv,
             d,
         }
     }
 
-    pub fn vertex(a: Vec3, b: Vec3, c: Vec3, ta: UV, tb: UV, tc: UV, normal: Vec3) -> Self {
+    pub fn vertex(a: Vec3, b: Vec3, c: Vec3, ta: UV, tb: UV, tc: UV, na: Vec3, nb: Vec3, nc: Vec3) -> Self {
         let q = a;
         let u = b - a;
         let v = c - a;
         let tq = ta;
         let tu = tb - ta;
         let tv = tc - ta;
-        if normal.dot(u * v) > 0.0 {
-            Triangle::new(q, u, v, tq, tu, tv)
+        let nq = na;
+        let nu = nb - na;
+        let nv = nc - na;
+        if nq.dot(u * v) > 0.0 {
+            Triangle::new(q, u, v, tq, tu, tv, nq, nu, nv)
         } else {
-            Triangle::new(q, v, u, tq, tv, tu)
+            Triangle::new(q, v, u, tq, tv, tu, nq, nv, nu)
         }
     }
 
@@ -75,7 +84,7 @@ impl Shape for Triangle {
         if alpha >= 0.0 && beta >= 0.0 && alpha + beta <= 1.0 {
             return hit_record.set_hit(
                 t,
-                self.normal,
+                self.nq + self.nu * alpha + self.nv * beta,
                 self.tq + self.tu * alpha + self.tv * beta,
                 atlas,
             );
@@ -131,12 +140,22 @@ impl Mesh {
                     m.texcoords[i[2] as usize * 2],
                     m.texcoords[i[2] as usize * 2 + 1],
                 );
-                let normal = Vec3::new(
+                let na = Vec3::new(
                     m.normals[i[0] as usize * 3],
                     m.normals[i[0] as usize * 3 + 1],
                     m.normals[i[0] as usize * 3 + 2],
-                ); // simply use the first normal. three normals are expected to be the same
-                let triangle = Triangle::vertex(a, b, c, ta, tb, tc, normal);
+                );
+                let nb = Vec3::new(
+                    m.normals[i[1] as usize * 3],
+                    m.normals[i[1] as usize * 3 + 1],
+                    m.normals[i[1] as usize * 3 + 2],
+                );
+                let nc = Vec3::new(
+                    m.normals[i[2] as usize * 3],
+                    m.normals[i[2] as usize * 3 + 1],
+                    m.normals[i[2] as usize * 3 + 2],
+                );
+                let triangle = Triangle::vertex(a, b, c, ta, tb, tc, na, nb, nc);
                 triangles.push(triangle);
             });
             map.insert(model.name, triangles);

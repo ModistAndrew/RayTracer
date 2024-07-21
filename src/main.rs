@@ -104,12 +104,12 @@ fn main() {
         Atlas::default().set_attenuation(SolidColor::new(Color::WHITE)),
     );
     world.add_object(
-        Sphere::new(Vec3::new(1.5, 3.0, -1.0), 1.0),
+        Sphere::new(Vec3::new(0.0, 0.0, 3.0), 1.0),
         Emissive,
         Atlas::default().set_emission(SolidColor::new(Color::new(40.0, 30.0, 20.0))),
     );
     world.add_light(
-        Sphere::new(Vec3::new(1.5, 3.0, -1.0), 1.0),
+        Sphere::new(Vec3::new(0.0, 0.0, 3.0), 1.0),
     );
 
     let image_width = 1200;
@@ -133,5 +133,5 @@ fn main() {
     );
     let picture = Canvas::empty(image_width, image_height);
     let raytracer = RayTracer::new(camera, picture, world.build(), 50);
-    raytracer.render().save("output/final/test4.png");
+    raytracer.render().save("output/final/test5.png");
 }
